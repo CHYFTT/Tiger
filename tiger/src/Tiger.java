@@ -72,7 +72,8 @@ public class Tiger
     // normal compilation phases.
     try {
       fstream = new BufferedInputStream(new FileInputStream(fname));
-      parser = new Parser(fname, fstream);
+      f=new PushbackInputStream(fstream);
+      parser = new Parser(fname,f);
 
       parser.parse();
 

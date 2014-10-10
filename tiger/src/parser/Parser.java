@@ -11,9 +11,9 @@ public class Parser
   Lexer lexer;
   Token current;
 
-  public Parser(String fname, java.io.InputStream fstream)
+  public Parser(String fname, java.io.PushbackInputStream f)
   {
-    lexer = new Lexer(fname, fstream);
+    lexer = new Lexer(fname, f);
     current = lexer.nextToken();
   }
 
@@ -23,13 +23,17 @@ public class Parser
 
   private void advance()   //advance() can get the nextToken
   {
+	  System.out.println(current.kind.toString()+"  "+current.lineNum);
     current = lexer.nextToken();
   }
 
   private void eatToken(Kind kind)
   {
     if (kind == current.kind)
+    {
+      //System.out.println(kind.toString()+"  "+current.lineNum);
       advance();
+    }
     else {
       System.out.println("Expects: " + kind.toString());
       System.out.println("But got: " + current.kind.toString());
@@ -219,20 +223,22 @@ public class Parser
 	  switch(current.kind)
 	  {
 	  case TOKEN_IF:
-		  advance();
+		  eatToken(Kind.TOKEN_IF);;
 		  eatToken(Kind.TOKEN_LPAREN);//the eatToken() can check the token and 
 		  parseExp();				//then get the next token automatically
 		  eatToken(Kind.TOKEN_RPAREN);
 		  parseStatement();
+		  break;
 		  
 	  case TOKEN_WHILE:
-		  advance();
+		  eatToken(Kind.TOKEN_WHILE);
 		  eatToken(Kind.TOKEN_LPAREN);
 		  parseExp();
 		  eatToken(Kind.TOKEN_RPAREN);
 		  parseStatement();
+		  break;
 	  case TOKEN_SYSTEM:
-		  advance();
+		  eatToken(Kind.TOKEN_SYSTEM);
 		  eatToken(Kind.TOKEN_DOT);
 		  eatToken(Kind.TOKEN_OUT);
 		  eatToken(Kind.TOKEN_DOT);
@@ -241,25 +247,34 @@ public class Parser
 		  parseExp();
 		  eatToken(Kind.TOKEN_RPAREN);
 		  eatToken(Kind.TOKEN_SEMI);
+		  System.out.println("the current Token is "+current.kind.toString());
+		  break;
 	  case TOKEN_ID:
-		  advance();
+		  eatToken(Kind.TOKEN_ID);
 		  switch(current.kind)
 		  {
 		  case TOKEN_ASSIGN:
+			  eatToken(Kind.TOKEN_ASSIGN);
 			  parseExp();
 			  eatToken(Kind.TOKEN_SEMI);
+			  break;
 		  case TOKEN_LBRACK:
+			  eatToken(Kind.TOKEN_LBRACK);
 			  parseExp();
 			  eatToken(Kind.TOKEN_RBRACK);
 			  eatToken(Kind.TOKEN_ASSIGN);
 			  parseExp();
 			  eatToken(Kind.TOKEN_SEMI);
+			  break;
 		  default:
 			error();	  
 		  
 		  }
+		  break;
 	  case TOKEN_ELSE:
-		  parseStatement();;
+		  eatToken(Kind.TOKEN_ELSE);
+		  parseStatement();
+		  break;
 	  default:
 		  error();
 		  return;
@@ -289,7 +304,8 @@ public class Parser
   {
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a type.                    what does this method do?
-    new util.Todo();
+    //new util.Todo();
+	  System.out.println("parseType()");
   }
 
   // VarDecl -> Type id ;
@@ -338,7 +354,8 @@ public class Parser
   {
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a method.
-    new util.Todo();
+    //new util.Todo();
+	  eatToken(Kind.TOKEN_PUBLIC);
     return;
   }
 
@@ -393,6 +410,8 @@ public class Parser
     // grammar above.
 	  
 	  //main
+	 
+	  
 	  eatToken(Kind.TOKEN_PUBLIC);//每一次执行完eatToken()current都会改变
 	  eatToken(Kind.TOKEN_STATIC);
 	  eatToken(Kind.TOKEN_VOID);
@@ -405,6 +424,7 @@ public class Parser
 	  eatToken(Kind.TOKEN_RPAREN);
 	  eatToken(Kind.TOKEN_LBRACE);
 	  parseStatements();
+	  eatToken(Kind.TOKEN_RBRACE);
 	  
 	  
 	  
@@ -417,7 +437,13 @@ public class Parser
   // Program -> MainClass ClassDecl*
   private void parseProgram()
   {
-    parseMainClass();
+	  eatToken(Kind.TOKEN_CLASS);
+	  eatToken(Kind.TOKEN_ID);
+	  eatToken(Kind.TOKEN_LBRACE);
+      parseMainClass();
+      eatToken(Kind.TOKEN_RBRACE);
+    
+    
     parseClassDecls();
     eatToken(Kind.TOKEN_EOF);
     return;
@@ -425,6 +451,7 @@ public class Parser
 
   public void parse()
   {
+	  //System.out.println(current.kind.toString()+"  "+current.lineNum );
     parseProgram();
     return;
   }
