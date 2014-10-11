@@ -2,6 +2,8 @@ package lexer;
 
 public class Token
 {
+	static String isClass="";
+
 	static String  key[]={
 			"+",
 		    "&&",

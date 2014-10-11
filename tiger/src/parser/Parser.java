@@ -222,12 +222,24 @@ public class Parser
     //new util.Todo();
 	  switch(current.kind)
 	  {
+	  case TOKEN_RETURN:
+		  eatToken(Kind.TOKEN_RETURN);
+		  parseExp();
+		  eatToken(Kind.TOKEN_SEMI);
+		  
+		  break;
+	  case TOKEN_LBRACE:
+		  eatToken(Kind.TOKEN_LBRACE);
+		  parseStatements();
+		  eatToken(Kind.TOKEN_RBRACE);
+		  break;
 	  case TOKEN_IF:
 		  eatToken(Kind.TOKEN_IF);;
 		  eatToken(Kind.TOKEN_LPAREN);//the eatToken() can check the token and 
 		  parseExp();				//then get the next token automatically
 		  eatToken(Kind.TOKEN_RPAREN);
-		  parseStatement();
+		  parseStatements();
+		  
 		  break;
 		  
 	  case TOKEN_WHILE:
@@ -235,7 +247,8 @@ public class Parser
 		  eatToken(Kind.TOKEN_LPAREN);
 		  parseExp();
 		  eatToken(Kind.TOKEN_RPAREN);
-		  parseStatement();
+		  parseStatements();
+		  
 		  break;
 	  case TOKEN_SYSTEM:
 		  eatToken(Kind.TOKEN_SYSTEM);
@@ -247,7 +260,6 @@ public class Parser
 		  parseExp();
 		  eatToken(Kind.TOKEN_RPAREN);
 		  eatToken(Kind.TOKEN_SEMI);
-		  System.out.println("the current Token is "+current.kind.toString());
 		  break;
 	  case TOKEN_ID:
 		  eatToken(Kind.TOKEN_ID);
@@ -273,7 +285,7 @@ public class Parser
 		  break;
 	  case TOKEN_ELSE:
 		  eatToken(Kind.TOKEN_ELSE);
-		  parseStatement();
+		  parseStatements();
 		  break;
 	  default:
 		  error();
@@ -290,7 +302,8 @@ public class Parser
   {
     while (current.kind == Kind.TOKEN_LBRACE || current.kind == Kind.TOKEN_IF
         || current.kind == Kind.TOKEN_WHILE
-        || current.kind == Kind.TOKEN_SYSTEM || current.kind == Kind.TOKEN_ID) {
+        || current.kind == Kind.TOKEN_SYSTEM || current.kind == Kind.TOKEN_ID
+        ||current.kind==Kind.TOKEN_RETURN) {//make return as the terminal of the statement
       parseStatement();
     }
     return;
@@ -305,7 +318,7 @@ public class Parser
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a type.                    what does this method do?
     //new util.Todo();
-	  System.out.println("do the parseType()");
+	  
 	  switch(current.kind){
 	  case TOKEN_INT:
 		  eatToken(Kind.TOKEN_INT);
@@ -314,7 +327,8 @@ public class Parser
 		  eatToken(Kind.TOKEN_BOOLEAN);
 		  break;
 	  default:
-		  eatToken(Kind.TOKEN_ID);
+			  eatToken(Kind.TOKEN_ID);
+		  return;
 	  }
 	  
   }
@@ -324,10 +338,12 @@ public class Parser
   {
     // to parse the "Type" nonterminal in this method, instead of writing
     // a fresh one.
-    parseType();// reference to the return Exp
-    eatToken(Kind.TOKEN_ID);
-    eatToken(Kind.TOKEN_SEMI);
-    return;
+	
+		 parseType();// reference to the return Exp
+		 eatToken(Kind.TOKEN_ID);
+		 eatToken(Kind.TOKEN_SEMI);
+		 return;
+	
   }
 
   // VarDecls -> VarDecl VarDecls
@@ -335,8 +351,17 @@ public class Parser
   private void parseVarDecls()
   {
     while (current.kind == Kind.TOKEN_INT || current.kind == Kind.TOKEN_BOOLEAN
-        || current.kind == Kind.TOKEN_ID) {   //through the while(),ensure muti VarDecls
-      parseVarDecl();
+        || current.kind == Kind.TOKEN_ID) { //through the while(),ensure muti VarDecls
+      if(current.kind!=Kind.TOKEN_ID)
+      {
+    	parseVarDecl();
+      }
+      else if(current.lexeme=="class")
+      {
+    	  parseVarDecl();
+      }
+      else
+    	  return;
     }
     return;
   }

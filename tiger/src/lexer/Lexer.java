@@ -15,6 +15,7 @@ public class Lexer
   
   public String s = "";
   int linenum=1;
+  static int isClass=0;
   Token behind=null;
   Token cmp=null;
   
@@ -205,7 +206,29 @@ public class Lexer
 		  {
 			  Token token=new Token();
 			  Kind k=token.getkey(s);
-  			  behind=new Token(k,linenum);
+			  if(k==Kind.TOKEN_CLASS)
+			  {
+				  Token.isClass=s;
+				  behind=new Token(k,linenum);
+			  }
+			  else if(k==Kind.TOKEN_ID)
+			  {
+				  if(Token.isClass!="")
+					  {
+					  	behind=new Token(k,linenum,Token.isClass);
+					  	Token.isClass="";
+					  }
+				  else
+					  behind=new Token(k,linenum,s);
+			  }
+			  else if(k==Kind.TOKEN_NUM)
+				  behind=new Token(k,linenum,s);
+				  
+			  else
+			  {
+				  //Token.isClass="";
+				  behind=new Token(k,linenum);
+			  }
   			  s="";
   			  if(c!=32)
   			  fstream.unread(c);
