@@ -69,6 +69,14 @@ public class Lexer
     	else
     		return behind;
     } 
+    case '&':
+    {
+    	cmp=printTokenforspace(c);
+    	if(cmp==null)
+    		return null;
+    	return behind;
+    
+    }
     case '=':
     {
     	cmp=printTokenforspace(c);
@@ -202,7 +210,12 @@ public class Lexer
   
   public Token printTokenforspace(int c) throws IOException
   {
-		  if(s!="")
+	  if(c==38&&s=="&")
+	  {
+			  behind=new Token(Kind.TOKEN_AND,linenum);
+			  s="";
+	  }
+	  else  if(s!="")
 		  {
 			  Token token=new Token();
 			  Kind k=token.getkey(s);
@@ -226,16 +239,25 @@ public class Lexer
 				  
 			  else
 			  {
-				  //Token.isClass="";
 				  behind=new Token(k,linenum);
 			  }
-  			  s="";
-  			  if(c!=32)
+			  if(c==38)
+				  s="&";
+			  else
+				  s="";
+  			  if(c!=32&&c!=38)
   			  fstream.unread(c);
   			  return behind;
   			  
   	} 
-	  return null;
+	  else if(s==""&&c==38)
+	  {
+		  s="&";
+		  behind=null;
+	  }
+	  else
+		  return null;
+	return behind;
 	  
   }
 
