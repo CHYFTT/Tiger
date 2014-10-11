@@ -48,7 +48,7 @@ public class Token
 			};
    String Kind1[] =
 			{
-	    "TOKEN_ADD", // "+"
+	    "TOKEN_ADD", //  "+"
 	    "TOKEN_AND", // "&&"
 	    "TOKEN_ASSIGN", // "="
 	    "TOKEN_BOOLEAN", // "boolean"
