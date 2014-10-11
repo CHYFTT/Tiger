@@ -305,7 +305,18 @@ public class Parser
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a type.                    what does this method do?
     //new util.Todo();
-	  System.out.println("parseType()");
+	  System.out.println("do the parseType()");
+	  switch(current.kind){
+	  case TOKEN_INT:
+		  eatToken(Kind.TOKEN_INT);
+		  break;
+	  case TOKEN_BOOLEAN:
+		  eatToken(Kind.TOKEN_BOOLEAN);
+		  break;
+	  default:
+		  eatToken(Kind.TOKEN_ID);
+	  }
+	  
   }
 
   // VarDecl -> Type id ;
@@ -324,7 +335,7 @@ public class Parser
   private void parseVarDecls()
   {
     while (current.kind == Kind.TOKEN_INT || current.kind == Kind.TOKEN_BOOLEAN
-        || current.kind == Kind.TOKEN_ID) {
+        || current.kind == Kind.TOKEN_ID) {   //through the while(),ensure muti VarDecls
       parseVarDecl();
     }
     return;
@@ -356,6 +367,21 @@ public class Parser
     // to parse a method.
     //new util.Todo();
 	  eatToken(Kind.TOKEN_PUBLIC);
+	  parseType();
+	  eatToken(Kind.TOKEN_ID);
+	  eatToken(Kind.TOKEN_LPAREN);
+	  parseFormalList();
+	  eatToken(Kind.TOKEN_RPAREN);
+	  eatToken(Kind.TOKEN_LBRACE);
+	  
+	  parseVarDecls();
+	  parseStatements();
+	  
+	  
+	  
+	  eatToken(Kind.TOKEN_RBRACE);
+	  
+	  
     return;
   }
 
