@@ -18,6 +18,8 @@ public class Lexer
   static int isClass=0;
   Token behind=null;
   Token cmp=null;
+  int ex=0;
+  boolean needCmt=true;
   
 
   public Lexer(String fname, PushbackInputStream fstream)
@@ -35,8 +37,8 @@ public class Lexer
   {
 	 
 	  
-	  Kind k;
     int c = this.fstream.read();
+    
     if (-1 == c)
     	
       // The value for "lineNum" is now "null",
@@ -45,15 +47,23 @@ public class Lexer
       return new Token(Kind.TOKEN_EOF, linenum);
 
     // skip all kinds of "blanks" 
+   
     while ('\t' == c || '\n' == c) {
     	if('\n'==c)
     		linenum++;
       c = this.fstream.read();
-      //System.out.println((char)c);
     }
+  
     if (-1 == c)
-    	 
       return new Token(Kind.TOKEN_EOF, linenum);
+    
+  //analysis the Comments
+    if ('/' == c) {
+		ex = c;
+		c = this.fstream.read();
+		isComments(c, ex);
+		return null;
+	}
 
     switch (c) {
     case ' ':
@@ -207,6 +217,41 @@ public class Lexer
     }
 	
   }
+  public void isComments(int c,int ex) throws IOException{
+	  if(c=='/'||c=='*')
+	  {
+		  if(c=='/')
+		  {
+			  while(c!='\n')
+				  c=this.fstream.read();
+			  linenum++;
+			  
+		  }
+		  else
+		  {//confirm comment
+			  ex=this.fstream.read();
+			  while(c!='*'||ex!='/')
+			  {
+				  c=ex;
+				  ex=this.fstream.read();
+				  
+				  
+				  
+			  }
+			  
+		  }
+		  
+		  
+		  
+	  }
+		  //the else is well down
+	  else
+	  {
+		  new util.Bug();
+		  
+	  }
+	  
+  }
   
   public Token printTokenforspace(int c) throws IOException
   {
@@ -277,6 +322,14 @@ public Token nextToken()
       System.out.println(t.toString());
     return t;
   }
+
+void Skip(int c)
+{
+	 while ('\t' == c || '\n' == c) {
+	    	if('\n'==c)
+	    		linenum++;
+	 }
+}
 
 
 }
