@@ -83,6 +83,9 @@ public class Parser {
 		case TOKEN_TRUE:
 			advance();
 			return;
+		case TOKEN_FALSE:
+			advance();
+			return;
 		case TOKEN_THIS:
 			advance();
 			return;
@@ -285,6 +288,7 @@ public class Parser {
 	private void parseStatements() {
 		while (current.kind == Kind.TOKEN_LBRACE
 				|| current.kind == Kind.TOKEN_IF
+				|| current.kind ==Kind.TOKEN_ELSE
 				|| current.kind == Kind.TOKEN_WHILE
 				|| current.kind == Kind.TOKEN_SYSTEM
 				|| current.kind == Kind.TOKEN_ID
@@ -308,6 +312,11 @@ public class Parser {
 		switch (current.kind) {
 		case TOKEN_INT:
 			eatToken(Kind.TOKEN_INT);
+			if(current.kind==Kind.TOKEN_LBRACK)
+			{
+				eatToken(Kind.TOKEN_LBRACK);
+				eatToken(Kind.TOKEN_RBRACK);
+			}
 			break;
 		case TOKEN_BOOLEAN:
 			eatToken(Kind.TOKEN_BOOLEAN);
@@ -341,8 +350,11 @@ public class Parser {
 				parseVarDecl();
 			} else if (current.lexeme == "class") {
 				parseVarDecl();
-			} else
+			} 
+			else 
 				return;
+				
+			
 		}
 		return;
 	}
