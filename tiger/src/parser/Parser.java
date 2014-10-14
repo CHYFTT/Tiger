@@ -21,13 +21,12 @@ public class Parser {
 
 	private void advance() // advance() can get the nextToken
 	{
-		System.out.println(current.kind.toString() + "  " + current.lineNum);
+		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + current.lineNum);
 		current = lexer.nextToken();
 	}
 
 	private void eatToken(Kind kind) {
 		if (kind == current.kind) {
-			// System.out.println(kind.toString()+"  "+current.lineNum);
 			advance();
 		} else {
 			System.out.println("Expects: " + kind.toString());
@@ -276,6 +275,10 @@ public class Parser {
 			eatToken(Kind.TOKEN_ELSE);
 			parseStatements();
 			break;
+		case TOKEN_ASSIGN:
+			parseExp();
+			eatToken(Kind.TOKEN_SEMI);
+			break;
 		default:
 			error();
 			return;
@@ -348,11 +351,35 @@ public class Parser {
 													// VarDecls
 			if (current.kind != Kind.TOKEN_ID) {
 				parseVarDecl();
-			} else if (current.lexeme == "class") {
-				parseVarDecl();
 			} 
 			else 
-				return;
+			{
+				eatToken(Kind.TOKEN_ID);//statement 
+				if(current.kind==Kind.TOKEN_ASSIGN)
+				{
+					eatToken(Kind.TOKEN_ASSIGN);
+					parseExp();
+					eatToken(Kind.TOKEN_SEMI);
+					
+				}//statement
+				else if(current.kind==Kind.TOKEN_LBRACK)
+				{
+					eatToken(Kind.TOKEN_LBRACK);
+					parseExp();
+					eatToken(Kind.TOKEN_RBRACK);
+					eatToken(Kind.TOKEN_ASSIGN);
+					parseExp();
+					eatToken(Kind.TOKEN_SEMI);
+					
+				}//VarDecl
+				else
+				{
+					eatToken(Kind.TOKEN_ID);
+					eatToken(Kind.TOKEN_SEMI);
+				}
+			}
+				
+			
 				
 			
 		}

@@ -220,15 +220,31 @@ public class Lexer {
 			Token token = new Token();
 			Kind k = token.getkey(s);
 			if (k == Kind.TOKEN_CLASS) {
-				Token.isClass = s;
+				
 				behind = new Token(k, linenum);
 			} else if (k == Kind.TOKEN_ID) {
 				if (Token.isClass != "") {
 					behind = new Token(k, linenum, Token.isClass);
 					Token.isClass = "";
 				} else
-					behind = new Token(k, linenum, s);
-			} else if (k == Kind.TOKEN_NUM)
+				{
+					behind = new Token(k, linenum, "Type");
+					Token.isClass=s;
+				}
+			}
+			else if(k==Kind.TOKEN_INT)
+			{
+				Token.isClass="int";
+				behind = new Token(k, linenum, "Type");
+				
+			}
+			else if(k==Kind.TOKEN_BOOLEAN)
+			{
+				Token.isClass="boolean";
+				behind = new Token(k, linenum, "Type");
+				
+			}
+			else if (k == Kind.TOKEN_NUM)
 				behind = new Token(k, linenum, s);
 
 			else {
