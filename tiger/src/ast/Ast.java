@@ -448,6 +448,7 @@ public class Ast
 
       public Times(T left, T right)
       {
+        this.left = left;
         this.right = right;
       }
 
@@ -585,9 +586,9 @@ public class Ast
     public static class While extends T
     {
       public Exp.T condition;
-      public LinkedList<Stm.T> body;
+      public T body;
 
-      public While(Exp.T condition, LinkedList<Stm.T> body)
+      public While(Exp.T condition, T body)
       {
         this.condition = condition;
         this.body = body;

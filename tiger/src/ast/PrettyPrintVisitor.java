@@ -37,7 +37,6 @@ import ast.Ast.Type.IntArray;
 
 public class PrettyPrintVisitor implements Visitor
 {
-	boolean isLast;
   private int indentLevel;
 
   public PrettyPrintVisitor()
@@ -97,14 +96,9 @@ public class PrettyPrintVisitor implements Visitor
   {
     e.exp.accept(this);
     this.say("." + e.id + "(");
-    int i=0;
     for (Exp.T x : e.args) {
-    	i++;
       x.accept(this);
-      if(i!=e.args.size())
       this.say(", ");
-      else
-    	  ;
     }
     this.say(")");
     return;
@@ -276,21 +270,13 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(MethodSingle m)
   {
-	  
     this.say("  public ");
     m.retType.accept(this);
     this.say(" " + m.id + "(");
-    int i=0;
     for (Dec.T d : m.formals) {
       Dec.DecSingle dec = (Dec.DecSingle) d;
-      i++;
       dec.type.accept(this);
-      if(i!=m.formals.size())
-      {
       this.say(" " + dec.id + ", ");
-      }
-      else
-    	  this.say(" "+ dec.id );
     }
     this.sayln(")");
     this.sayln("  {");
@@ -332,7 +318,6 @@ public class PrettyPrintVisitor implements Visitor
     }
     for (Method.T mthd : c.methods)
       mthd.accept(this);
-    
     this.sayln("}");
     return;
   }

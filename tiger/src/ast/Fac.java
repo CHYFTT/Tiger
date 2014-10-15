@@ -1,9 +1,10 @@
 package ast;
 
+import com.sun.xml.internal.bind.util.Which;
+
 import ast.Ast.Dec;
 import ast.Ast.Exp;
 import ast.Ast.Exp.Call;
-import ast.Ast.Exp.Add;
 import ast.Ast.Exp.Id;
 import ast.Ast.Exp.Lt;
 import ast.Ast.Exp.NewObject;
@@ -19,7 +20,6 @@ import ast.Ast.Program.ProgramSingle;
 import ast.Ast.Stm;
 import ast.Ast.Stm.Assign;
 import ast.Ast.Stm.If;
-import ast.Ast.Stm.While;
 import ast.Ast.Stm.Print;
 import ast.Ast.Type;
 
@@ -89,12 +89,10 @@ public class Fac
 	    	              new util.Flist<Stm.T>().list(new Assign("i",new Num(0)), 
 	    	            		  new Assign("sum",new Exp.False()),
 	    	            		  new Assign("sum",new Num(0)),
-	    	            		  new While(new Lt(new Id("i"),new Id("n")),
-	    	            				  new util.Flist<Stm.T>()
-	    	            	              .list(new Assign("sum",new Add(new Id("sum"),new Id("i"))),
-	    	            	            		  new Assign("i",new Add(new Id("i"),new Num(1)))))
+	    	            		  new Stm.While(new Exp.Lt(new Id("i"),new Id("n")),
+	    	            				  new Assign("sum",new Exp.Add(new Id("sum"),new Id("i"))))
 	    	            		 /*add*/),
-	          new Id("sum"))));
+	          new Id("num_aux"))));
   
   public static Program.T prog2 =new ProgramSingle(Sum,
 		  new util.Flist<ast.Ast.Class.T>().list(summ));
