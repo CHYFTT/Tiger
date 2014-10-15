@@ -448,6 +448,7 @@ public class Ast
 
       public Times(T left, T right)
       {
+    	  this.left = left;
         this.right = right;
       }
 
