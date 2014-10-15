@@ -505,9 +505,9 @@ public class Parser {
 		return;
 	}
 
-	public void parse() {
+	public ast.Ast.Program.T parse() {
 		// System.out.println(current.kind.toString()+"  "+current.lineNum );
 		parseProgram();
-		return;
+		return null;
 	}
 }

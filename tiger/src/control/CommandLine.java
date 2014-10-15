@@ -41,8 +41,32 @@ public class CommandLine
   @SuppressWarnings("unchecked")
   public CommandLine()
   {
-    this.args = new util.Flist<Arg<Object>>().list(new Arg<Object>("help",
-        null, "show this help information", Kind.Empty, (s) -> {
+    this.args = new util.Flist<Arg<Object>>().list(new Arg<Object>("dump",
+        "{ast}", "dump information about the given ir", Kind.String, (ss) -> {
+          String s = (String) ss;
+          if (s.equals("ast")) {
+            control.Control.ConAst.dumpAst = true;
+          } else {
+            System.out.println("bad argument: " + s);
+            output();
+            System.exit(1);
+          }
+          return;
+        }), new Arg<Object>("elab", "<arg>",
+        "dump information about elaboration", Kind.String, (ss) -> {
+          String s = (String) ss;
+          if (s.equals("classTable")) {
+            control.Control.ConAst.elabClassTable = true;
+          } else if (s.equals("methodTable"))
+            Control.ConAst.elabMethodTable = true;
+          else {
+            System.out.println("bad argument: " + s);
+            output();
+            System.exit(1);
+          }
+          return;
+        }), new Arg<Object>("help", null, "show this help information",
+        Kind.Empty, (s) -> {
           usage();
           System.exit(1);
           return;
@@ -69,6 +93,10 @@ public class CommandLine
             output();
             System.exit(1);
           }
+        }), new Arg<Object>("testFac", null,
+        "whether or not to test the Tiger compiler on Fac.java", Kind.Empty,
+        (s) -> {
+          Control.ConAst.testFac = true;
           return;
         }), new Arg<Object>("testlexer", null,
         "whether or not to test the lexer", Kind.Empty, (s) -> {
@@ -101,13 +129,14 @@ public class CommandLine
           continue;
 
         found = true;
+        String theArg = null;
         switch (arg.kind) {
         case Empty:
           arg.action.f(null);
           break;
         default:
           if (i >= cargs.length - 1) {
-            System.out.println("Error: "+cargs[i] + ": requires an argument");
+            System.out.println("Error: " + cargs[i] + ": requires an argument");
             this.output();
             System.exit(1);
           }
@@ -115,7 +144,7 @@ public class CommandLine
           break;
         }
 
-        String theArg = cargs[i];
+        theArg = cargs[i];
         switch (arg.kind) {
         case Bool:
           if (theArg.equals("true"))
@@ -123,7 +152,7 @@ public class CommandLine
           else if (theArg.equals("false"))
             arg.action.f(new Boolean(false));
           else {
-            System.out.println("Error: "+arg.name + ": requires a boolean");
+            System.out.println("Error: " + arg.name + ": requires a boolean");
             this.output();
             System.exit(1);
           }
@@ -133,7 +162,7 @@ public class CommandLine
           try {
             num = Integer.parseInt(theArg);
           } catch (java.lang.NumberFormatException e) {
-            System.out.println("Error: "+arg.name + ": requires an integer");
+            System.out.println("Error: " + arg.name + ": requires an integer");
             this.output();
             System.exit(1);
           }
