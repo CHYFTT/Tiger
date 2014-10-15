@@ -31,7 +31,7 @@ public class Tiger
     if (testFac) {
       System.out.println("Testing the Tiger compiler on Fac.java starting:");
       ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-      ast.Fac.prog.accept(pp);
+      ast.Fac.prog2.accept(pp);
       System.out.println("Testing the Tiger compiler on Fac.java finished.");
       System.exit(1);
     }

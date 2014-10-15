@@ -80,11 +80,18 @@ public class PrettyPrintVisitor implements Visitor
     // Lab2, exercise4: filling in missing code.
     // Similar for other methods with empty bodies.
     // Your code here:
+	  e.left.accept(this);
+	  this.say(" + ");
+	  e.right.accept(this);
+	  
   }
 
   @Override
   public void visit(And e)
   {
+	  e.left.accept(this);
+	  this.say(" && ");
+	  e.right.accept(this);
   }
 
   @Override
@@ -113,6 +120,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(False e)
   {
+	  this.say("false");
   }
 
   @Override
@@ -124,6 +132,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Length e)
   {
+	  e.array.accept(this);
   }
 
   @Override
@@ -138,6 +147,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(NewIntArray e)
   {
+	  e.exp.accept(this);
   }
 
   @Override
@@ -150,6 +160,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
+	  this.say(" != ");
+	  e.exp.accept(this);
   }
 
   @Override
@@ -186,6 +198,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(True e)
   {
+	  this.say("true");
   }
 
   // statements
@@ -195,7 +208,7 @@ public class PrettyPrintVisitor implements Visitor
     this.printSpaces();
     this.say(s.id + " = ");
     s.exp.accept(this);
-    this.say(";");
+    this.say(";\n");
     return;
   }
 
@@ -242,17 +255,34 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(While s)
   {
+	  this.printSpaces();
+	  this.say("while (");
+	  s.condition.accept(this);
+	  this.say(")");
+	  this.sayln("{");
+	  this.indent();
+	  for (Stm.T b : s.body)
+	      b.accept(this);
+	  this.unIndent();
+	  this.printSpaces();
+	  this.sayln("}");
+	  
+	  
+	  
+	    
   }
 
   // type
   @Override
   public void visit(Boolean t)
   {
+	  this.say("Boolean");
   }
 
   @Override
   public void visit(ClassType t)
   {
+	  this.say(t.id);
   }
 
   @Override
@@ -264,6 +294,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArray t)
   {
+	  this.say("int[]");
   }
 
   // dec
