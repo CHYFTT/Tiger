@@ -2,6 +2,7 @@ package elaborator;
 
 import java.util.LinkedList;
 
+import ast.Ast;
 import ast.Ast.Class;
 import ast.Ast.Exp.False;
 import ast.Ast.Exp.Id;
@@ -328,7 +329,8 @@ public class ElaboratorVisitor implements ast.Visitor
     // "main" has an argument "arg" of type "String[]", but
     // one has no chance to use it. So it's safe to skip it...
 
-    c.stm.accept(this);
+    for(Ast.Stm.T s:c.stm)
+    	s.accept(this);
     return;
   }
 

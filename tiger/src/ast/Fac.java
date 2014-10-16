@@ -41,9 +41,9 @@ public class Fac
 
   // // main class: "Factorial"
   static MainClass.T factorial = new MainClassSingle(
-      "Factorial", "a", new Print(new Call(
+      "Factorial", "a",new util.Flist<Stm.T>().list( new Print(new Call(
           new NewObject("Fac"), "ComputeFac",
-          new util.Flist<Exp.T>().list(new Num(10)))));
+          new util.Flist<Exp.T>().list(new Num(10))))));
 
   // // class "Fac"
   static ast.Ast.Class.T fac = new ast.Ast.Class.ClassSingle("Fac", null,
@@ -73,9 +73,9 @@ public class Fac
   
  
   static MainClass.T Sum = new MainClassSingle(
-	      "Sum", "a", new Print(new Call(
+	      "Sum", "a", new util.Flist<Stm.T>().list( new Print(new Call(
 	          new NewObject("Doit"), "doit",
-	          new util.Flist<Exp.T>().list(new Num(101)))));
+	          new util.Flist<Exp.T>().list(new Num(101))))));
   
   
   static ast.Ast.Class.T summ = new ast.Ast.Class.ClassSingle("Sum", null,

@@ -1,5 +1,15 @@
 package parser;
 
+import java.util.LinkedList;
+
+import ast.Ast;
+import ast.Ast.Class;
+import ast.Ast.Dec;
+import ast.Ast.MainClass;
+import ast.Ast.MainClass.MainClassSingle;
+import ast.Ast.Program.ProgramSingle;
+import ast.Ast.Stm;
+
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory.Default;
 
 import lexer.Lexer;
@@ -209,12 +219,7 @@ public class Parser {
 		// to parse a statement.
 		// new util.Todo();
 		switch (current.kind) {
-		case TOKEN_RETURN:
-			eatToken(Kind.TOKEN_RETURN);
-			parseExp();
-			eatToken(Kind.TOKEN_SEMI);
-
-			break;
+		
 		case TOKEN_LBRACE:
 			eatToken(Kind.TOKEN_LBRACE);
 			parseStatements();
@@ -283,24 +288,25 @@ public class Parser {
 			error();
 			return;
 		}
+		
 
 	}
 
 	// Statements -> Statement Statements
 	// ->
-	private void parseStatements() {
+	private LinkedList<Stm.T> parseStatements() {
+		LinkedList<Stm.T> stm=new LinkedList<Stm.T>();
 		while (current.kind == Kind.TOKEN_LBRACE
 				|| current.kind == Kind.TOKEN_IF
 				|| current.kind ==Kind.TOKEN_ELSE
 				|| current.kind == Kind.TOKEN_WHILE
 				|| current.kind == Kind.TOKEN_SYSTEM
-				|| current.kind == Kind.TOKEN_ID
-				|| current.kind == Kind.TOKEN_RETURN) {// make return as the
+				|| current.kind == Kind.TOKEN_ID) {// make return as the
 														// terminal of the
 														// statement
 			parseStatement();
 		}
-		return;
+		return null;
 	}
 
 	// Type -> int []
@@ -420,6 +426,10 @@ public class Parser {
 
 		parseVarDecls();
 		parseStatements();
+		
+		eatToken(Kind.TOKEN_RETURN);
+		parseExp();
+		eatToken(Kind.TOKEN_SEMI);
 
 		eatToken(Kind.TOKEN_RBRACE);
 
@@ -467,13 +477,20 @@ public class Parser {
 	// Statement
 	// }
 	// }
-	private void parseMainClass() {
+	private MainClassSingle parseMainClass() {
 		// Lab1. Exercise 4: Fill in the missing code
 		// to parse a main class as described by the
 		// grammar above.
 
-		// main
-
+		// main   String id, String arg, LinkedList<Stm.T>  stm
+		String id;
+		String arg;
+		LinkedList<Stm.T> stm;
+		
+		eatToken(Kind.TOKEN_CLASS);
+		id=current.lexeme;
+		eatToken(Kind.TOKEN_ID);
+		eatToken(Kind.TOKEN_LBRACE);
 		eatToken(Kind.TOKEN_PUBLIC);// 每一次执行完eatToken()current都会改变
 		eatToken(Kind.TOKEN_STATIC);
 		eatToken(Kind.TOKEN_VOID);
@@ -482,31 +499,36 @@ public class Parser {
 		eatToken(Kind.TOKEN_STRING);
 		eatToken(Kind.TOKEN_LBRACK);
 		eatToken(Kind.TOKEN_RBRACK);
+		arg=current.lexeme;
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_RPAREN);
 		eatToken(Kind.TOKEN_LBRACE);
-		parseStatements();
+		stm=parseStatements();
 		eatToken(Kind.TOKEN_RBRACE);
+		
 
 		// new util.Todo();
+		return new MainClassSingle(id,arg,stm) ;
 
 	}
 
 	// Program -> MainClass ClassDecl*
-	private void parseProgram() {
-		eatToken(Kind.TOKEN_CLASS);
-		eatToken(Kind.TOKEN_ID);
-		eatToken(Kind.TOKEN_LBRACE);
+	private ProgramSingle parseProgram() {
+		//MainClass.T mainClass, LinkedList<Class.T> classes
+		MainClassSingle mainClass;
+		LinkedList<Class.T> classed;
+		
 		parseMainClass();
+		
 		eatToken(Kind.TOKEN_RBRACE);
 
 		parseClassDecls();
 		eatToken(Kind.TOKEN_EOF);
-		return;
+		return new ProgramSingle(null,null);
 	}
 
 	public ast.Ast.Program.T parse() {
-		// System.out.println(current.kind.toString()+"  "+current.lineNum );
+		//System.out.println(current.kind.toString()+"  "+current.lineNum );
 		parseProgram();
 		return null;
 	}

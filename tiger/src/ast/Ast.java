@@ -683,9 +683,9 @@ public class Ast
     {
       public String id;
       public String arg;
-      public Stm.T stm;
+      public LinkedList<Stm.T>  stm;
 
-      public MainClassSingle(String id, String arg, Stm.T stm)
+      public MainClassSingle(String id, String arg, LinkedList<Stm.T>  stm)
       {
         this.id = id;
         this.arg = arg;
