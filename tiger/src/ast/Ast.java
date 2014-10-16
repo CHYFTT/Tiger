@@ -548,10 +548,10 @@ public class Ast
     public static class If extends T
     {
       public Exp.T condition;
-      public T thenn;
-      public T elsee;
+      public LinkedList<Stm.T> thenn;
+      public LinkedList<Stm.T> elsee;
 
-      public If(Exp.T condition, T thenn, T elsee)
+      public If(Exp.T condition, LinkedList<Stm.T> thenn, LinkedList<Stm.T> elsee)
       {
         this.condition = condition;
         this.thenn = thenn;

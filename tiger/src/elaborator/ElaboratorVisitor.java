@@ -246,8 +246,10 @@ public class ElaboratorVisitor implements ast.Visitor
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
       error();
-    s.thenn.accept(this);
-    s.elsee.accept(this);
+    for(Stm.T b:s.thenn)
+    	b.accept(this);
+    for(Stm.T b:s.elsee)
+    	b.accept(this);
     return;
   }
 

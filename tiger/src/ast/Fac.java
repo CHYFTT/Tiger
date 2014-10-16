@@ -54,12 +54,14 @@ public class Fac
           new util.Flist<Dec.T>().list(new Dec.DecSingle(
               new Type.Int(), "num_aux")), new util.Flist<Stm.T>()
               .list(new If(new Lt(new Id("num"),
-                  new Num(1)), new Assign("num_aux",
-                  new Num(1)), new Assign("num_aux",
+                  new Num(1)), new util.Flist<Stm.T>()
+                  .list(new Assign("num_aux",
+                  new Num(1))), new util.Flist<Stm.T>()
+                  .list(new Assign("num_aux",
                   new Times(new Id("num"), new Call(
                       new This(), "ComputeFac",
                       new util.Flist<Exp.T>().list(new Sub(
-                          new Id("num"), new Num(1)))))))),
+                          new Id("num"), new Num(1))))))))),
           new Id("num_aux"))));
 
   // program

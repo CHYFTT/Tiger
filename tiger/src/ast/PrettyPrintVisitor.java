@@ -215,6 +215,12 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(AssignArray s)
   {
+	  this.say("int[");
+	  s.index.accept(this);
+	  this.say("]");
+	  this.say(" = ");
+	  s.exp.accept(this);
+	  this.say(";\n");
   }
 
   @Override
@@ -230,13 +236,15 @@ public class PrettyPrintVisitor implements Visitor
     s.condition.accept(this);
     this.sayln(")");
     this.indent();
-    s.thenn.accept(this);
+    for (Stm.T b : s.thenn)
+	      b.accept(this);
     this.unIndent();
     this.sayln("");
     this.printSpaces();
     this.sayln("else");
     this.indent();
-    s.elsee.accept(this);
+    for (Stm.T b : s.elsee)
+	      b.accept(this);
     this.sayln("");
     this.unIndent();
     return;
