@@ -215,6 +215,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(AssignArray s)
   {
+	  this.printSpaces();
 	  this.say("int[");
 	  s.index.accept(this);
 	  this.say("]");

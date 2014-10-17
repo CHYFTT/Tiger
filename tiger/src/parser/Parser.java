@@ -39,8 +39,8 @@ public class Parser {
 	Lexer lexer;
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
-	boolean isSpecial=false;
-	boolean isNot=false;
+	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
+	boolean isNot=false;//to deal with the NotExp()
 	
 	Exp.T condition;
 	LinkedList<Stm.T> thenn;

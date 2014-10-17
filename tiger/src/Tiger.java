@@ -74,8 +74,8 @@ public class Tiger
       parser = new Parser(fname, f);
 
       theAst = parser.parse();
-      if(theAst!=null)
-    	  dumpAst=true;
+     // if(theAst!=null)
+    	 // dumpAst=true;
 
       fstream.close();
     } catch (Exception e) {

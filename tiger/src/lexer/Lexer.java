@@ -14,7 +14,6 @@ public class Lexer {
 
 	public String s = "";
 	int linenum = 1;
-	static int isClass = 0;
 	Token behind = null;
 	Token cmp = null;
 	int ex = 0;
@@ -219,37 +218,9 @@ public class Lexer {
 		} else if (s != "") {
 			Token token = new Token();
 			Kind k = token.getkey(s);
-			if (k == Kind.TOKEN_CLASS) {
-				
-				behind = new Token(k, linenum);
-			} else if (k == Kind.TOKEN_ID) {
-				if (Token.isClass != "") {
-					behind = new Token(k, linenum, Token.isClass);
-					Token.isClass = "";
-				} else
-				{
-					behind = new Token(k, linenum, "Type");
-					Token.isClass=s;
-				}
-			}
-			else if(k==Kind.TOKEN_INT)
-			{
-				Token.isClass="int";
-				behind = new Token(k, linenum, "Type");
-				
-			}
-			else if(k==Kind.TOKEN_BOOLEAN)
-			{
-				Token.isClass="boolean";
-				behind = new Token(k, linenum, "Type");
-				
-			}
-			else if (k == Kind.TOKEN_NUM)
-				behind = new Token(k, linenum, s);
-
-			else {
-				behind = new Token(k, linenum);
-			}
+			
+			behind = new Token(k, linenum,s);
+			
 			if (c == 38)
 				s = "&";
 			else
