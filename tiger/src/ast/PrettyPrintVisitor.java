@@ -160,7 +160,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
-	  this.say(" != ");
+	  this.say(" ! ");
 	  e.exp.accept(this);
   }
 

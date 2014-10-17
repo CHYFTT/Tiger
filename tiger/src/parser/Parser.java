@@ -38,10 +38,14 @@ import lexer.Token.Kind;
 public class Parser {
 	Lexer lexer;
 	Token current;
+	Token currentNext;//in order to deal with the margin between VarDecls and Statements
+	boolean isSpecial=false;
+	boolean isNot=false;
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
 		lexer = new Lexer(fname, f);
 		current = lexer.nextToken();
+		
 	}
 
 	// /////////////////////////////////////////////
@@ -194,10 +198,17 @@ public class Parser {
 		Exp.T exp = null;
 		while (current.kind == Kind.TOKEN_NOT) {
 			advance();
+			isNot=true;
+			//return new Exp.Not(exp);
+		}
+		
+		exp=parseNotExp();
+		
+		if(isNot){
+			isNot=false;
 			return new Exp.Not(exp);
 		}
-		exp=parseNotExp();
-		return exp;
+		else return exp;
 	}
 
 	// AddSubExp -> TimesExp * TimesExp
@@ -276,25 +287,34 @@ public class Parser {
 			// Exp.T condition; LinkedList<Stm.T> thenn; LinkedList<Stm.T> elsee;
 			Exp.T condition;
 			LinkedList<Stm.T> thenn;
-			LinkedList<Stm.T> elsee;
+			LinkedList<Stm.T> elsee = null;
 			eatToken(Kind.TOKEN_IF);
 			eatToken(Kind.TOKEN_LPAREN);// the eatToken() can check the token
 										// and
 			condition=parseExp(); // then get the next token automatically
 			eatToken(Kind.TOKEN_RPAREN);
-			thenn=parseStatements();
-			advance();
+			if(current.kind==Kind.TOKEN_LBRACE)
+				thenn=parseStatements();
+			else
+				thenn=parseStatement();
+			//advance();
 			if(current.kind==Kind.TOKEN_ELSE)
 			{
 				eatToken(Kind.TOKEN_ELSE);
-				elsee=parseStatements();
+				if(current.kind==Kind.TOKEN_LBRACE)
+					elsee=parseStatements();
+				else
+					elsee=parseStatement();
+				stms.add(new If(condition, thenn, elsee));
+				
 			}
 			else
 			{
-				elsee=null;
+				
+				stms.add(new If(condition, thenn, null));
 			}
 			
-			stms.add(new If(condition, thenn, elsee));
+			
 			return stms;
 			
 
@@ -323,6 +343,38 @@ public class Parser {
 			return stms;
 		case TOKEN_ID:
 			String id=current.lexeme;
+			
+			if(isSpecial)//it means this is returned from VarDecls
+			{
+				current=currentNext;
+				switch (current.kind) {
+				case TOKEN_ASSIGN:
+					eatToken(Kind.TOKEN_ASSIGN);
+					exp=parseExp();
+					eatToken(Kind.TOKEN_SEMI);
+					stms.add(new Stm.Assign(id, exp));
+					isSpecial=false;
+					return stms;
+				case TOKEN_LBRACK:
+					eatToken(Kind.TOKEN_LBRACK);
+					Exp.T index=parseExp();
+					eatToken(Kind.TOKEN_RBRACK);
+					eatToken(Kind.TOKEN_ASSIGN);
+					exp=parseExp();
+					eatToken(Kind.TOKEN_SEMI);
+					stms.add(new Stm.AssignArray(id, index, exp));
+					isSpecial=false;
+					return stms;
+				default:
+					error();
+					return null;
+
+				}
+				
+				
+			}
+			else
+			{
 			eatToken(Kind.TOKEN_ID);
 			switch (current.kind) {
 			case TOKEN_ASSIGN:
@@ -333,18 +385,20 @@ public class Parser {
 				return stms;
 			case TOKEN_LBRACK:
 				eatToken(Kind.TOKEN_LBRACK);
-				parseExp();
+				Exp.T index=parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
 				eatToken(Kind.TOKEN_ASSIGN);
-				parseExp();
+				exp=parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				break;
+				stms.add(new Stm.AssignArray(id, index, exp));
+				return stms;
 			default:
 				error();
 				return null;
 
 			}
-			break;
+			}
+			
 		
 		case TOKEN_ASSIGN:
 			exp=parseExp();
@@ -433,23 +487,25 @@ public class Parser {
 				decs.add(parseVarDecl());
 			} 
 			else 
-			{
-				eatToken(Kind.TOKEN_ID);//statement 
+			{//the current must be TOKEN_ID
+				String id=current.lexeme;
+				int linenum=current.lineNum;
+				eatToken(Kind.TOKEN_ID);//statement //I think it's need to goto Statement;
 				if(current.kind==Kind.TOKEN_ASSIGN)
 				{
-					eatToken(Kind.TOKEN_ASSIGN);
-					parseExp();
-					eatToken(Kind.TOKEN_SEMI);
+					currentNext=current;
+					current=new Token(Kind.TOKEN_ID,linenum,id);
+					isSpecial=true;
+					return decs;
 					
 				}//statement
 				else if(current.kind==Kind.TOKEN_LBRACK)
 				{
-					eatToken(Kind.TOKEN_LBRACK);
-					parseExp();
-					eatToken(Kind.TOKEN_RBRACK);
-					eatToken(Kind.TOKEN_ASSIGN);
-					parseExp();
-					eatToken(Kind.TOKEN_SEMI);
+					currentNext=current;
+					current=new Token(Kind.TOKEN_ID,linenum,id);
+					isSpecial=true;
+					return decs;
+					
 					
 				}//VarDecl
 				else
