@@ -41,6 +41,10 @@ public class Parser {
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;
 	boolean isNot=false;
+	
+	Exp.T condition;
+	LinkedList<Stm.T> thenn;
+	LinkedList<Stm.T> elsee = null;
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
 		lexer = new Lexer(fname, f);
@@ -285,9 +289,7 @@ public class Parser {
 			return stms;
 		case TOKEN_IF:
 			// Exp.T condition; LinkedList<Stm.T> thenn; LinkedList<Stm.T> elsee;
-			Exp.T condition;
-			LinkedList<Stm.T> thenn;
-			LinkedList<Stm.T> elsee = null;
+			
 			eatToken(Kind.TOKEN_IF);
 			eatToken(Kind.TOKEN_LPAREN);// the eatToken() can check the token
 										// and
@@ -297,24 +299,20 @@ public class Parser {
 				thenn=parseStatements();
 			else
 				thenn=parseStatement();
-			//advance();
-			if(current.kind==Kind.TOKEN_ELSE)
-			{
-				eatToken(Kind.TOKEN_ELSE);
-				if(current.kind==Kind.TOKEN_LBRACE)
-					elsee=parseStatements();
-				else
-					elsee=parseStatement();
+			//behind the if,it must be else; make the decision that Statements or Statement
+			//in the CASE:TOKEN_ELSE,not in here
+				
+				elsee=parseStatements();
+				
 				stms.add(new If(condition, thenn, elsee));
-				
-			}
+				return stms;
+		case TOKEN_ELSE:
+			eatToken(Kind.TOKEN_ELSE);
+			if(current.kind==Kind.TOKEN_LBRACE)
+				elsee=parseStatements();
 			else
-			{
-				
-				stms.add(new If(condition, thenn, null));
-			}
-			
-			
+				elsee=parseStatement();
+			stms.add(new If(condition, thenn, elsee));
 			return stms;
 			
 
