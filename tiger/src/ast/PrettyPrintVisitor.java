@@ -147,7 +147,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(NewIntArray e)
   {
+	 this.say("new int[");
 	  e.exp.accept(this);
+	  this.say("]");
   }
 
   @Override
@@ -160,7 +162,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
-	  this.say(" ! ");
+	  this.say("!");
 	  e.exp.accept(this);
   }
 
@@ -227,6 +229,13 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Block s)
   {
+	  this.sayln("{");
+	  this.indent();
+	  for(Stm.T b:s.stms)
+		  b.accept(this);
+	  this.unIndent();
+	  this.printSpaces();
+	  this.sayln("}");
   }
 
   @Override
@@ -235,19 +244,16 @@ public class PrettyPrintVisitor implements Visitor
     this.printSpaces();
     this.say("if (");
     s.condition.accept(this);
-    this.sayln(")");
-    this.indent();
+    
+    
     for (Stm.T b : s.thenn)
 	      b.accept(this);
-    this.unIndent();
-    this.sayln("");
     this.printSpaces();
-    this.sayln("else");
-    this.indent();
+    this.say("else");
+    
     for (Stm.T b : s.elsee)
 	      b.accept(this);
-    this.sayln("");
-    this.unIndent();
+    
     return;
   }
 
@@ -268,17 +274,12 @@ public class PrettyPrintVisitor implements Visitor
 	  this.say("while (");
 	  s.condition.accept(this);
 	  this.say(")");
-	  this.sayln("{");
 	  this.indent();
 	  for (Stm.T b : s.body)
 	      b.accept(this);
 	  this.unIndent();
 	  this.printSpaces();
-	  this.sayln("}");
-	  
-	  
-	  
-	    
+
   }
 
   // type

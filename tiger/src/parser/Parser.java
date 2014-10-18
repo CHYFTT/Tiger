@@ -42,9 +42,7 @@ public class Parser {
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
 	boolean isNot=false;//to deal with the NotExp()
 	
-	Exp.T condition;
-	LinkedList<Stm.T> thenn;
-	LinkedList<Stm.T> elsee = null;
+	
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
 		lexer = new Lexer(fname, f);
@@ -279,13 +277,18 @@ public class Parser {
 		// to parse a statement.
 		// new util.Todo();
 		Exp.T exp;
+		Exp.T condition;
+		LinkedList<Stm.T> thenn;
+		LinkedList<Stm.T> elsee = null;
 		LinkedList<Stm.T> stms=new LinkedList<Stm.T>();
 		switch (current.kind) {
 		
 		case TOKEN_LBRACE:
+			LinkedList<Stm.T> blockstms=new LinkedList<Stm.T>();
 			eatToken(Kind.TOKEN_LBRACE);
-			stms=parseStatements();
+			blockstms=parseStatements();
 			eatToken(Kind.TOKEN_RBRACE);
+			stms.add(new Stm.Block(blockstms));
 			return stms;
 		case TOKEN_IF:
 			// Exp.T condition; LinkedList<Stm.T> thenn; LinkedList<Stm.T> elsee;
@@ -295,18 +298,20 @@ public class Parser {
 										// and
 			condition=parseExp(); // then get the next token automatically
 			eatToken(Kind.TOKEN_RPAREN);
-			if(current.kind==Kind.TOKEN_LBRACE)
+			
 				thenn=parseStatements();
-			else
-				thenn=parseStatement();
+			
 			//behind the if,it must be else; make the decision that Statements or Statement
 			//in the CASE:TOKEN_ELSE,not in here
+			eatToken(Kind.TOKEN_ELSE);
 				
+			
 				elsee=parseStatements();
+			
 				
 				stms.add(new If(condition, thenn, elsee));
 				return stms;
-		case TOKEN_ELSE:
+	/*	case TOKEN_ELSE:
 			eatToken(Kind.TOKEN_ELSE);
 			if(current.kind==Kind.TOKEN_LBRACE)
 				elsee=parseStatements();
@@ -314,6 +319,7 @@ public class Parser {
 				elsee=parseStatement();
 			stms.add(new If(condition, thenn, elsee));
 			return stms;
+			*/
 			
 
 		case TOKEN_WHILE:
@@ -417,7 +423,7 @@ public class Parser {
 		LinkedList<Stm.T> stm=new LinkedList<Stm.T>();
 		while (current.kind == Kind.TOKEN_LBRACE
 				|| current.kind == Kind.TOKEN_IF
-				|| current.kind ==Kind.TOKEN_ELSE
+				//|| current.kind ==Kind.TOKEN_ELSE
 				|| current.kind == Kind.TOKEN_WHILE
 				|| current.kind == Kind.TOKEN_SYSTEM
 				|| current.kind == Kind.TOKEN_ID) {// make return as the
@@ -463,6 +469,7 @@ public class Parser {
 		String id;
 		// to parse the "Type" nonterminal in this method, instead of writing
 		// a fresh one.
+		if(!isSpecial){
 
 		Type.T type=parseType();// reference to the return Exp
 		id=current.lexeme;
@@ -470,6 +477,20 @@ public class Parser {
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_SEMI);
 		return dec;
+		}
+		else
+		{
+			Type.T type=new Type.ClassType(current.lexeme);
+			current=currentNext;
+			id=current.lexeme;
+			dec=new DecSingle(type,id);
+			eatToken(Kind.TOKEN_ID);
+			eatToken(Kind.TOKEN_SEMI);
+			isSpecial=false;
+			
+			return dec;
+			
+		}
 	}
 
 	// VarDecls -> VarDecl VarDecls
@@ -508,8 +529,11 @@ public class Parser {
 				}//VarDecl
 				else
 				{
-					eatToken(Kind.TOKEN_ID);
-					eatToken(Kind.TOKEN_SEMI);
+					currentNext=current;
+					current=new Token(Kind.TOKEN_ID,linenum,id);
+					isSpecial=true;
+					decs.add(parseVarDecl());
+					
 				}
 			}
 				
