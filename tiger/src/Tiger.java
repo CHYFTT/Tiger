@@ -90,8 +90,8 @@ public class Tiger
     }
     
     // elaborate the AST, report all possible errors.
-    //elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
-    //theAst.accept(elab);
+    elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
+    theAst.accept(elab);
     
     return;
   }

@@ -681,9 +681,9 @@ public class Ast
 
     public static class MainClassSingle extends T
     {
-      public String id;
-      public String arg;
-      public LinkedList<Stm.T>  stm;
+      public String id;//Sum
+      public String arg;//a
+      public LinkedList<Stm.T>  stm;//system.out.println
 
       public MainClassSingle(String id, String arg, LinkedList<Stm.T>  stm)
       {

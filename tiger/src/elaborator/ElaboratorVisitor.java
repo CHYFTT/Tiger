@@ -348,10 +348,13 @@ public class ElaboratorVisitor implements ast.Visitor
   private void buildClass(ClassSingle c)
   {
     this.classTable.put(c.id, new ClassBinding(c.extendss));
+    //VarDecls
     for (Dec.T dec : c.decs) {
       Dec.DecSingle d = (Dec.DecSingle) dec;
-      this.classTable.put(c.id, d.id, d.type);
+      this.classTable.put(c.id, d.id, d.type);//根据ClassSingle的id去找buildClass，
+		  										//根据结果将d的id与Type放入对应ClassBinding的field表中
     }
+    //Method
     for (Method.T method : c.methods) {
       MethodSingle m = (MethodSingle) method;
       this.classTable.put(c.id, m.id, new MethodType(m.retType, m.formals));

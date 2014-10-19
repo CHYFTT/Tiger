@@ -37,7 +37,8 @@ public class ClassBinding
 
   public void put(String mid, MethodType mt)
   {
-    if (this.methods.get(mid) != null) {
+    if (this.methods.get(mid) != null) {//当没有重名方法时，将对应的方法放入
+										//ClassBindling的methods表
       System.out.println("duplicated class method: " + mid);
       System.exit(1);
     }

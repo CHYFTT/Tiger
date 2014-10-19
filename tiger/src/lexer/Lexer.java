@@ -253,10 +253,6 @@ public class Lexer {
 		return t;
 	}
 
-	void Skip(int c) {
-		while ('\t' == c || '\n' == c) {
-			if ('\n' == c)
-				linenum++;
-		}
-	}
+	
+	
 }
