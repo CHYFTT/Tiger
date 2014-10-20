@@ -17,7 +17,7 @@ public class ClassTable
   public void put(String c, ClassBinding cb)
   {
     if (this.table.get(c) != null) {
-      System.out.println("duplicated class: " + c);
+      System.out.println("duplicated class: " + c+"at line:");
       System.exit(1);
     }
     this.table.put(c, cb);
@@ -82,6 +82,7 @@ public class ClassTable
 
   public void dump()
   {
+	  System.out.println("<String---ClassBinding>");
 	  System.out.println(this.table);
   }
 

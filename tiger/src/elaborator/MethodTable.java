@@ -22,7 +22,7 @@ public class MethodTable
     for (Dec.T dec : formals) {
       Dec.DecSingle decc = (Dec.DecSingle) dec;
       if (this.table.get(decc.id) != null) {
-        System.out.println("duplicated parameter: " + decc.id);
+        System.out.println("duplicated parameter: " + decc.id+"at line:"+"");
         System.exit(1);
       }
       this.table.put(decc.id, decc.type);
@@ -47,7 +47,8 @@ public class MethodTable
 
   public void dump()
   {
-    new Todo();
+	  System.out.println("<id----Type>");
+	  System.out.println(this.table);
   }
 
   @Override

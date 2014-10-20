@@ -548,10 +548,10 @@ public class Ast
     public static class If extends T
     {
       public Exp.T condition;
-      public LinkedList<Stm.T> thenn;
-      public LinkedList<Stm.T> elsee;
+      public T thenn;
+      public T elsee;
 
-      public If(Exp.T condition, LinkedList<Stm.T> thenn, LinkedList<Stm.T> elsee)
+      public If(Exp.T condition, T thenn, T elsee)
       {
         this.condition = condition;
         this.thenn = thenn;
@@ -586,9 +586,9 @@ public class Ast
     public static class While extends T
     {
       public Exp.T condition;
-      public LinkedList<Stm.T> body;
+      public T body;
 
-      public While(Exp.T condition, LinkedList<Stm.T> body)
+      public While(Exp.T condition, T body)
       {
         this.condition = condition;
         this.body = body;

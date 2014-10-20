@@ -29,7 +29,7 @@ public class ClassBinding
   public void put(String xid, Type.T type)
   {
     if (this.fields.get(xid) != null) {
-      System.out.println("duplicated class field: " + xid);
+      System.out.println("duplicated class field: " + xid+" at line:");
       System.exit(1);
     }
     this.fields.put(xid, type);

@@ -162,8 +162,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
-	  this.say("!");
+	  this.say("!(");
 	  e.exp.accept(this);
+	  this.say(")");
   }
 
   @Override
@@ -229,6 +230,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Block s)
   {
+	  this.sayln("");
+	  this.printSpaces();
 	  this.sayln("{");
 	  this.indent();
 	  for(Stm.T b:s.stms)
@@ -244,15 +247,12 @@ public class PrettyPrintVisitor implements Visitor
     this.printSpaces();
     this.say("if (");
     s.condition.accept(this);
-    
-    
-    for (Stm.T b : s.thenn)
-	      b.accept(this);
+    this.sayln(")");
     this.printSpaces();
-    this.say("else");
-    
-    for (Stm.T b : s.elsee)
-	      b.accept(this);
+    s.thenn.accept(this);
+    this.printSpaces();
+    this.sayln("else");
+    s.elsee.accept(this);
     
     return;
   }
@@ -275,8 +275,7 @@ public class PrettyPrintVisitor implements Visitor
 	  s.condition.accept(this);
 	  this.say(")");
 	  this.indent();
-	  for (Stm.T b : s.body)
-	      b.accept(this);
+	  s.body.accept(this);
 	  this.unIndent();
 	  this.printSpaces();
 

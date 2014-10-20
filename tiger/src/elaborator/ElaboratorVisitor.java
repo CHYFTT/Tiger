@@ -45,7 +45,7 @@ public class ElaboratorVisitor implements ast.Visitor
   public MethodTable methodTable; // symbol table for each method
   public String currentClass; // the class name being elaborated
   public Type.T type; // type of the expression being elaborated
-
+  public String currentMethod;
   public ElaboratorVisitor()
   {
     this.classTable = new ClassTable();
@@ -65,11 +65,26 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Add e)
   {
+	  e.left.accept(this);
+	  Type.T t=this.type;
+	  e.right.accept(this);
+	  if(!t.toString().equals(this.type.toString()))
+		  error();
+	  if(!t.toString().equals("@int"))
+		  error();
+	  return;
+	  
   }
 
   @Override
   public void visit(And e)
   {
+	  e.left.accept(this);
+	  Type.T t=this.type;
+	  e.right.accept(this);
+	  if(!t.toString().equals(this.type.toString()))
+		  error();
+	  return;
   }
 
   @Override
@@ -114,6 +129,7 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(False e)
   {
+	  this.type=new Type.Boolean();
   }
 
   @Override
@@ -139,6 +155,7 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Length e)
   {
+	  this.type=new Type.IntArray();
   }
 
   @Override
@@ -156,6 +173,9 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(NewIntArray e)
   {
+	  e.exp.accept(this);
+	  if(!this.type.toString().equals("@int"))
+		  error();
   }
 
   @Override
@@ -168,6 +188,8 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Not e)
   {
+	  e.exp.accept(this);
+	  this.type=new Type.Boolean();
   }
 
   @Override
@@ -211,6 +233,7 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(True e)
   {
+	 this.type=new Type.Boolean(); 
   }
 
   // statements
@@ -225,19 +248,36 @@ public class ElaboratorVisitor implements ast.Visitor
     if (type == null)
       error();
     s.exp.accept(this);
-    s.type = type;
-    this.type.toString().equals(type.toString());
+    //s.type = type;
+    if(!this.type.toString().equals(type.toString()))
+    	error();
     return;
   }
 
   @Override
   public void visit(AssignArray s)
   {
+	  Type.T t=this.methodTable.get(s.id);
+	  if(t==null)
+		  t=this.classTable.get(this.currentClass, s.id);
+	  if(t==null)
+		  error();
+	  s.index.accept(this);
+	  if(!this.type.toString().equals("@int"))
+		  error();
+	  
+	  s.exp.accept(this);
+	  
+		  if(!this.type.toString().equals("@int"))
+			  error();
+	  
   }
 
   @Override
   public void visit(Block s)
   {
+	  for(Stm.T t:s.stms)
+		  t.accept(this);
   }
 
   @Override
@@ -246,10 +286,8 @@ public class ElaboratorVisitor implements ast.Visitor
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
       error();
-    for(Stm.T b:s.thenn)
-    	b.accept(this);
-    for(Stm.T b:s.elsee)
-    	b.accept(this);
+    s.thenn.accept(this);
+    s.elsee.accept(this);
     return;
   }
 
@@ -265,34 +303,48 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(While s)
   {
+	  s.condition.accept(this);
+	  if(!this.type.toString().equals("@boolean"))
+		  error();
+	  s.body.accept(this);
+	  return;
   }
 
   // type
   @Override
   public void visit(Type.Boolean t)
   {
+	  System.out.println("The Ast is wrong!");
+	  error();
   }
 
   @Override
   public void visit(Type.ClassType t)
   {
+	  System.out.println("The Ast is wrong!");
+	  error();
   }
 
   @Override
   public void visit(Type.Int t)
   {
-    System.out.println("aaaa");
+	  System.out.println("The Ast is wrong!");
+	  error();
   }
 
   @Override
   public void visit(Type.IntArray t)
   {
+	  System.out.println("The Ast is wrong!");
+	  error();
   }
 
   // dec
   @Override
   public void visit(Dec.DecSingle d)
   {
+	  System.out.println("The Ast is wrong!");
+	  error();
   }
 
   // method
@@ -300,14 +352,19 @@ public class ElaboratorVisitor implements ast.Visitor
   public void visit(Method.MethodSingle m)
   {
     // construct the method table
+	this.methodTable = new  MethodTable();//每一个方法有一张MethodTable，因为不同方法
+											//中的变量可以重名
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
       this.methodTable.dump();
 
     for (Stm.T s : m.stms)
-      s.accept(this);
-    m.retExp.accept(this);
+    {
+    	System.out.println("This is the Stm:"+s );
+    	s.accept(this);
+    }
+     m.retExp.accept(this);
     return;
   }
 
@@ -318,6 +375,8 @@ public class ElaboratorVisitor implements ast.Visitor
     this.currentClass = c.id;
 
     for (Method.T m : c.methods) {
+    	MethodSingle mm = (MethodSingle) m;
+    	System.out.println("This is the method:  "+ mm.id);
       m.accept(this);
     }
     return;
@@ -385,8 +444,10 @@ public class ElaboratorVisitor implements ast.Visitor
     // ////////////////////////////////////////////////
     // step 2: elaborate each class in turn, under the class table
     // built above.
+    System.out.println("mainClass....................");
     p.mainClass.accept(this);
     for (Class.T c : p.classes) {
+    	System.out.println("normalClass....................");
       c.accept(this);
     }
 

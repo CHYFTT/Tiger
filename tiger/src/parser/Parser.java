@@ -40,7 +40,6 @@ public class Parser {
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
-	boolean isNot=false;//to deal with the NotExp()
 	
 	
 
@@ -148,7 +147,7 @@ public class Parser {
 				advance();
 				eatToken(Kind.TOKEN_LPAREN);
 				eatToken(Kind.TOKEN_RPAREN);
-				return new Id(s);
+				return new NewObject(s);
 			default:
 				error();
 				return exp;
@@ -185,6 +184,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_RPAREN);
 				return new Call(exp,s,args);
 			} else {
+				//[exp]
 				advance();
 				exp=parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
@@ -198,19 +198,21 @@ public class Parser {
 	// -> NotExp
 	private Exp.T parseTimesExp() {
 		Exp.T exp = null;
+		Exp.T exp2=null;
 		while (current.kind == Kind.TOKEN_NOT) {
 			advance();
-			isNot=true;
-			//return new Exp.Not(exp);
+			
+			
+			exp2=parseTimesExp();
 		}
 		
-		exp=parseNotExp();
 		
-		if(isNot){
-			isNot=false;
-			return new Exp.Not(exp);
-		}
-		else return exp;
+
+		if(exp2!=null)
+		return new Exp.Not(exp2);
+		else 
+			exp=parseNotExp();
+			return exp;
 	}
 
 	// AddSubExp -> TimesExp * TimesExp
@@ -272,66 +274,55 @@ public class Parser {
 	// -> System.out.println ( Exp ) ;
 	// -> id = Exp ;
 	// -> id [ Exp ]= Exp ;
-	private LinkedList<Stm.T> parseStatement() {
+	private Stm.T parseStatement() {
 		// Lab1. Exercise 4: Fill in the missing code
 		// to parse a statement.
 		// new util.Todo();
 		Exp.T exp;
 		Exp.T condition;
-		LinkedList<Stm.T> thenn;
-		LinkedList<Stm.T> elsee = null;
+		
+		
 		LinkedList<Stm.T> stms=new LinkedList<Stm.T>();
 		switch (current.kind) {
 		
 		case TOKEN_LBRACE:
-			LinkedList<Stm.T> blockstms=new LinkedList<Stm.T>();
+			LinkedList<Stm.T> block=new LinkedList<Stm.T>();
 			eatToken(Kind.TOKEN_LBRACE);
-			blockstms=parseStatements();
+			block=parseStatements();
 			eatToken(Kind.TOKEN_RBRACE);
-			stms.add(new Stm.Block(blockstms));
-			return stms;
+			return new Stm.Block(block);
+			
 		case TOKEN_IF:
-			// Exp.T condition; LinkedList<Stm.T> thenn; LinkedList<Stm.T> elsee;
+			// Exp.T condition; T thenn; T elsee;
 			
 			eatToken(Kind.TOKEN_IF);
 			eatToken(Kind.TOKEN_LPAREN);// the eatToken() can check the token
 										// and
-			condition=parseExp(); // then get the next token automatically
+			 condition=parseExp(); // then get the next token automatically
 			eatToken(Kind.TOKEN_RPAREN);
 			
-				thenn=parseStatements();
+			Stm.T thenn=parseStatement();
 			
 			//behind the if,it must be else; make the decision that Statements or Statement
 			//in the CASE:TOKEN_ELSE,not in here
 			eatToken(Kind.TOKEN_ELSE);
 				
-			
-				elsee=parseStatements();
+			Stm.T elsee=parseStatement();
 			
 				
-				stms.add(new If(condition, thenn, elsee));
-				return stms;
-	/*	case TOKEN_ELSE:
-			eatToken(Kind.TOKEN_ELSE);
-			if(current.kind==Kind.TOKEN_LBRACE)
-				elsee=parseStatements();
-			else
-				elsee=parseStatement();
-			stms.add(new If(condition, thenn, elsee));
-			return stms;
-			*/
-			
+			return new If(condition, thenn, elsee);
+
 
 		case TOKEN_WHILE:
-			LinkedList<Stm.T> body=new LinkedList<Stm.T>();
+			
 			eatToken(Kind.TOKEN_WHILE);
 			eatToken(Kind.TOKEN_LPAREN);
 			exp=parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
-			body=parseStatements();
-			stms.add(new Stm.While(exp,body));
+			Stm.T body=parseStatement();
+			return new Stm.While(exp,body);
 
-			return stms;
+			
 		case TOKEN_SYSTEM:
 			
 			eatToken(Kind.TOKEN_SYSTEM);
@@ -343,8 +334,8 @@ public class Parser {
 			exp=parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
 			eatToken(Kind.TOKEN_SEMI);
-			stms.add(new Print(exp));
-			return stms;
+			return new Print(exp);
+			
 		case TOKEN_ID:
 			String id=current.lexeme;
 			
@@ -356,9 +347,9 @@ public class Parser {
 					eatToken(Kind.TOKEN_ASSIGN);
 					exp=parseExp();
 					eatToken(Kind.TOKEN_SEMI);
-					stms.add(new Stm.Assign(id, exp));
+					
 					isSpecial=false;
-					return stms;
+					return new Stm.Assign(id, exp);
 				case TOKEN_LBRACK:
 					eatToken(Kind.TOKEN_LBRACK);
 					Exp.T index=parseExp();
@@ -368,7 +359,7 @@ public class Parser {
 					eatToken(Kind.TOKEN_SEMI);
 					stms.add(new Stm.AssignArray(id, index, exp));
 					isSpecial=false;
-					return stms;
+					return new Stm.AssignArray(id, index, exp);
 				default:
 					error();
 					return null;
@@ -385,8 +376,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_ASSIGN);
 				exp=parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				stms.add(new Stm.Assign(id, exp));
-				return stms;
+				return new Stm.Assign(id, exp);
 			case TOKEN_LBRACK:
 				eatToken(Kind.TOKEN_LBRACK);
 				Exp.T index=parseExp();
@@ -394,8 +384,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_ASSIGN);
 				exp=parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				stms.add(new Stm.AssignArray(id, index, exp));
-				return stms;
+				return new Stm.AssignArray(id, index, exp);
 			default:
 				error();
 				return null;
@@ -429,7 +418,7 @@ public class Parser {
 				|| current.kind == Kind.TOKEN_ID) {// make return as the
 														// terminal of the
 														// statement
-			stm.addAll(parseStatement());
+			stm.add(parseStatement());
 		}
 		return stm;
 	}
@@ -667,7 +656,7 @@ public class Parser {
 		id=current.lexeme;
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_LBRACE);
-		eatToken(Kind.TOKEN_PUBLIC);// 每一次执行完eatToken()current都会改变
+		eatToken(Kind.TOKEN_PUBLIC);
 		eatToken(Kind.TOKEN_STATIC);
 		eatToken(Kind.TOKEN_VOID);
 		eatToken(Kind.TOKEN_MAIN);

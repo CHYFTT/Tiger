@@ -54,14 +54,12 @@ public class Fac
           new util.Flist<Dec.T>().list(new Dec.DecSingle(
               new Type.Int(), "num_aux")), new util.Flist<Stm.T>()
               .list(new If(new Lt(new Id("num"),
-                  new Num(1)), new util.Flist<Stm.T>()
-                  .list(new Assign("num_aux",
-                  new Num(1))), new util.Flist<Stm.T>()
-                  .list(new Assign("num_aux",
+                  new Num(1)), new Assign("num_aux",
+                  new Num(1)), new Assign("num_aux",
                   new Times(new Id("num"), new Call(
                       new This(), "ComputeFac",
                       new util.Flist<Exp.T>().list(new Sub(
-                          new Id("num"), new Num(1))))))))),
+                          new Id("num"), new Num(1)))))))),
           new Id("num_aux"))));
 
   // program
@@ -92,10 +90,9 @@ public class Fac
 	    	            		  new Assign("sum",new Exp.False()),
 	    	            		  new Assign("sum",new Num(0)),
 	    	            		  new While(new Lt(new Id("i"),new Id("n")),
-	    	            				  new util.Flist<Stm.T>()
-	    	            	              .list(new Assign("sum",new Add(new Id("sum"),new Id("i"))),
-	    	            	            		  new Assign("i",new Add(new Id("i"),new Num(1)))))
-	    	            		 /*add*/),
+	    	            				  new Stm.Block(new util.Flist<Stm.T>().list( 
+	    	            						  new Assign("sum",new Add(new Id("sum"),new Id("i"))),
+	    	            	            		  new Assign("i",new Add(new Id("i"),new Num(1))))))),
 	          new Id("sum"))));
   
   public static Program.T prog2 =new ProgramSingle(Sum,
