@@ -91,6 +91,7 @@ public class Tiger
     // elaborate the AST, report all possible errors.
     elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
     theAst.accept(elab);
+    System.out.println("lab3 finished...to be continue");
     
     return;
   }

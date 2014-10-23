@@ -40,7 +40,7 @@ public class Parser {
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
-	
+	int linenum;
 	
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
@@ -55,7 +55,8 @@ public class Parser {
 
 	private void advance() // advance() can get the nextToken
 	{
-		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + current.lineNum);
+		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + linenum);
+		linenum=current.lineNum;
 		current = lexer.nextToken();
 	}
 
@@ -70,7 +71,7 @@ public class Parser {
 	}
 
 	private void error() {
-		System.out.println("Syntax error: compilation aborting...\n");
+		System.out.println("Syntax error: compilation aborting...at line:\n"+linenum);
 		System.exit(1);
 		return;
 	}
@@ -119,20 +120,20 @@ public class Parser {
 		case TOKEN_NUM:
 			i=Integer.parseInt(current.lexeme);
 			advance();
-			return new Exp.Num(i);
+			return new Exp.Num(i,linenum);
 		case TOKEN_TRUE:
 			advance();
-			return new Exp.True();
+			return new Exp.True(linenum);
 		case TOKEN_FALSE:
 			advance();
-			return new Exp.False();
+			return new Exp.False(linenum);
 		case TOKEN_THIS:
 			advance();
-			return new Exp.This();
+			return new Exp.This(linenum);
 		case TOKEN_ID:
 			s=current.lexeme;
 			advance();
-			return new Id(s);
+			return new Id(s,linenum);
 		case TOKEN_NEW: {
 			advance();
 			switch (current.kind) {
@@ -141,13 +142,13 @@ public class Parser {
 				eatToken(Kind.TOKEN_LBRACK);
 				exp=parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
-				return new Exp.NewIntArray(exp);
+				return new Exp.NewIntArray(exp,linenum);
 			case TOKEN_ID:
 				s=current.lexeme;
 				advance();
 				eatToken(Kind.TOKEN_LPAREN);
 				eatToken(Kind.TOKEN_RPAREN);
-				return new NewObject(s);
+				return new NewObject(s,linenum);
 			default:
 				error();
 				return exp;
@@ -174,7 +175,7 @@ public class Parser {
 				advance();
 				if (current.kind == Kind.TOKEN_LENGTH) {
 					advance();
-					return new Exp.Length(exp);
+					return new Exp.Length(exp,linenum);
 				}
 				//else Call
 				String s=current.lexeme;
@@ -182,7 +183,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_LPAREN);
 				LinkedList<T> args=parseExpList();
 				eatToken(Kind.TOKEN_RPAREN);
-				return new Call(exp,s,args);
+				return new Call(exp,s,args,linenum);
 			} else {
 				//[exp]
 				advance();
@@ -209,7 +210,7 @@ public class Parser {
 		
 
 		if(exp2!=null)
-		return new Exp.Not(exp2);
+		return new Exp.Not(exp2,linenum);
 		else 
 			exp=parseNotExp();
 			return exp;
@@ -223,7 +224,7 @@ public class Parser {
 		while (current.kind == Kind.TOKEN_TIMES) {
 			advance();
 			right=parseTimesExp();
-			return new Exp.Times(left, right);
+			return new Exp.Times(left, right,linenum);
 		}
 		return left;
 	}
@@ -237,7 +238,7 @@ public class Parser {
 		while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
 			advance();
 			right=parseAddSubExp();
-			return new Exp.Add(left, right);
+			return new Exp.Add(left, right,linenum);
 		}
 		return left;
 	}
@@ -250,7 +251,7 @@ public class Parser {
 		while (current.kind == Kind.TOKEN_LT) {
 			advance();
 			right=parseLtExp();
-			return new Exp.Lt(left, right);
+			return new Exp.Lt(left, right,linenum);
 		}
 		return left;
 	}
@@ -263,7 +264,7 @@ public class Parser {
 		while (current.kind == Kind.TOKEN_AND) {
 			advance();
 			right=parseAndExp();
-			return new Exp.And(left, right);
+			return new Exp.And(left, right,linenum);
 		}
 		return left;//new Exp.Lt(new Exp.Id("num"), new Exp.Num(1));
 	}
@@ -290,7 +291,7 @@ public class Parser {
 			eatToken(Kind.TOKEN_LBRACE);
 			block=parseStatements();
 			eatToken(Kind.TOKEN_RBRACE);
-			return new Stm.Block(block);
+			return new Stm.Block(block,linenum);
 			
 		case TOKEN_IF:
 			// Exp.T condition; T thenn; T elsee;
@@ -310,7 +311,7 @@ public class Parser {
 			Stm.T elsee=parseStatement();
 			
 				
-			return new If(condition, thenn, elsee);
+			return new If(condition, thenn, elsee,linenum);
 
 
 		case TOKEN_WHILE:
@@ -320,7 +321,7 @@ public class Parser {
 			exp=parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
 			Stm.T body=parseStatement();
-			return new Stm.While(exp,body);
+			return new Stm.While(exp,body,linenum);
 
 			
 		case TOKEN_SYSTEM:
@@ -334,7 +335,7 @@ public class Parser {
 			exp=parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
 			eatToken(Kind.TOKEN_SEMI);
-			return new Print(exp);
+			return new Print(exp,linenum);
 			
 		case TOKEN_ID:
 			String id=current.lexeme;
@@ -349,7 +350,7 @@ public class Parser {
 					eatToken(Kind.TOKEN_SEMI);
 					
 					isSpecial=false;
-					return new Stm.Assign(id, exp);
+					return new Stm.Assign(id, exp,linenum);
 				case TOKEN_LBRACK:
 					eatToken(Kind.TOKEN_LBRACK);
 					Exp.T index=parseExp();
@@ -357,9 +358,9 @@ public class Parser {
 					eatToken(Kind.TOKEN_ASSIGN);
 					exp=parseExp();
 					eatToken(Kind.TOKEN_SEMI);
-					stms.add(new Stm.AssignArray(id, index, exp));
+					stms.add(new Stm.AssignArray(id, index, exp,linenum));
 					isSpecial=false;
-					return new Stm.AssignArray(id, index, exp);
+					return new Stm.AssignArray(id, index, exp,linenum);
 				default:
 					error();
 					return null;
@@ -376,7 +377,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_ASSIGN);
 				exp=parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				return new Stm.Assign(id, exp);
+				return new Stm.Assign(id, exp,linenum);
 			case TOKEN_LBRACK:
 				eatToken(Kind.TOKEN_LBRACK);
 				Exp.T index=parseExp();
@@ -384,7 +385,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_ASSIGN);
 				exp=parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				return new Stm.AssignArray(id, index, exp);
+				return new Stm.AssignArray(id, index, exp,linenum);
 			default:
 				error();
 				return null;

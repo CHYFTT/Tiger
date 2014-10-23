@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 public class Ast
 {
+	 
 
   // ///////////////////////////////////////////////////////////
   // type
@@ -161,6 +162,8 @@ public class Ast
   {
     public static abstract class T implements ast.Acceptable
     {
+    	  public int linenum;
+
     }
 
     // +
@@ -169,10 +172,11 @@ public class Ast
       public T left;
       public T right;
 
-      public Add(T left, T right)
+      public Add(T left, T right,int linenum)
       {
         this.left = left;
         this.right = right;
+        this.linenum=linenum;
       }
 
       @Override
@@ -189,7 +193,7 @@ public class Ast
       public T left;
       public T right;
 
-      public And(T left, T right)
+      public And(T left, T right,int linenum)
       {
         this.left = left;
         this.right = right;
@@ -209,10 +213,11 @@ public class Ast
       public T array;
       public T index;
 
-      public ArraySelect(T array, T index)
+      public ArraySelect(T array, T index,int linenum)
       {
         this.array = array;
         this.index = index;
+        this.linenum=linenum;
       }
 
       @Override
@@ -233,12 +238,13 @@ public class Ast
       public java.util.LinkedList<Type.T> at; // arg's type
       public Type.T rt;
 
-      public Call(T exp, String id, java.util.LinkedList<T> args)
+      public Call(T exp, String id, java.util.LinkedList<T> args,int linenum)
       {
         this.exp = exp;
         this.id = id;
         this.args = args;
         this.type = null;
+        this.linenum=linenum;
       }
 
       @Override
@@ -253,9 +259,9 @@ public class Ast
     public static class False extends T
     {
     	
-      public False()
+      public False(int linenum)
       {
-    	 
+    	 this.linenum=linenum;
       }
 
       @Override
@@ -273,18 +279,20 @@ public class Ast
       public Type.T type; // type of the id
       public boolean isField; // whether or not this is a class field
 
-      public Id(String id)
+      public Id(String id,int linenum)
       {
         this.id = id;
         this.type = null;
         this.isField = false;
+        this.linenum=linenum;
       }
 
-      public Id(String id, Type.T type, boolean isField)
+      public Id(String id, Type.T type, boolean isField,int linenum)
       {
         this.id = id;
         this.type = type;
         this.isField = isField;
+        this.linenum=linenum;
       }
 
       @Override
@@ -300,9 +308,10 @@ public class Ast
     {
       public T array;
 
-      public Length(T array)
+      public Length(T array,int linenum)
       {
         this.array = array;
+        this.linenum=linenum;
       }
 
       @Override
@@ -319,10 +328,11 @@ public class Ast
       public T left;
       public T right;
 
-      public Lt(T left, T right)
+      public Lt(T left, T right,int linenum)
       {
         this.left = left;
         this.right = right;
+        this.linenum=linenum;
       }
 
       @Override
@@ -338,9 +348,10 @@ public class Ast
     {
       public T exp;
 
-      public NewIntArray(T exp)
+      public NewIntArray(T exp,int linenum)
       {
         this.exp = exp;
+        this.linenum=linenum;
       }
 
       @Override
@@ -356,9 +367,10 @@ public class Ast
     {
       public String id;
 
-      public NewObject(String id)
+      public NewObject(String id,int linenum)
       {
         this.id = id;
+        this.linenum=linenum;
       }
 
       @Override
@@ -374,9 +386,10 @@ public class Ast
     {
       public T exp;
 
-      public Not(T exp)
+      public Not(T exp,int linenum)
       {
         this.exp = exp;
+        this.linenum=linenum;
       }
 
       @Override
@@ -392,9 +405,10 @@ public class Ast
     {
       public int num;
 
-      public Num(int num)
+      public Num(int num,int linenum)
       {
         this.num = num;
+        this.linenum=linenum;
       }
 
       @Override
@@ -411,10 +425,11 @@ public class Ast
       public T left;
       public T right;
 
-      public Sub(T left, T right)
+      public Sub(T left, T right,int linenum)
       {
         this.left = left;
         this.right = right;
+        this.linenum=linenum;
       }
 
       @Override
@@ -428,8 +443,9 @@ public class Ast
     // this
     public static class This extends T
     {
-      public This()
+      public This(int linenum)
       {
+    	  this.linenum=linenum;
       }
 
       @Override
@@ -446,10 +462,11 @@ public class Ast
       public T left;
       public T right;
 
-      public Times(T left, T right)
+      public Times(T left, T right,int linenum)
       {
     	  this.left = left;
-        this.right = right;
+    	  this.right = right;
+    	  this.linenum=linenum;
       }
 
       @Override
@@ -463,8 +480,9 @@ public class Ast
     // True
     public static class True extends T
     {
-      public True()
+      public True(int linenum)
       {
+    	  this.linenum=linenum;
       }
 
       @Override
@@ -483,6 +501,8 @@ public class Ast
   {
     public static abstract class T implements ast.Acceptable
     {
+
+		public int linenum;
     }
 
     // assign
@@ -491,12 +511,13 @@ public class Ast
       public String id;
       public Exp.T exp;
       public Type.T type; // type of the id
-
-      public Assign(String id, Exp.T exp)
+    
+      public Assign(String id, Exp.T exp,int linenum)
       {
         this.id = id;
         this.exp = exp;
         this.type = null;
+        this.linenum=linenum;
       }
 
       @Override
@@ -512,12 +533,14 @@ public class Ast
       public String id;
       public Exp.T index;
       public Exp.T exp;
+      
 
-      public AssignArray(String id, Exp.T index, Exp.T exp)
+      public AssignArray(String id, Exp.T index, Exp.T exp,int linenum)
       {
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.linenum=linenum;
       }
 
       @Override
@@ -531,10 +554,12 @@ public class Ast
     public static class Block extends T
     {
       public java.util.LinkedList<T> stms;
+      
 
-      public Block(java.util.LinkedList<T> stms)
+      public Block(java.util.LinkedList<T> stms,int linenum)
       {
         this.stms = stms;
+        this.linenum=linenum;
       }
 
       @Override
@@ -550,12 +575,14 @@ public class Ast
       public Exp.T condition;
       public T thenn;
       public T elsee;
+     
 
-      public If(Exp.T condition, T thenn, T elsee)
+      public If(Exp.T condition, T thenn, T elsee,int linenum)
       {
         this.condition = condition;
         this.thenn = thenn;
         this.elsee = elsee;
+        this.linenum=linenum;
       }
 
       @Override
@@ -569,10 +596,12 @@ public class Ast
     public static class Print extends T
     {
       public Exp.T exp;
+      
 
-      public Print(Exp.T exp)
+      public Print(Exp.T exp,int linenum)
       {
         this.exp = exp;
+        this.linenum=linenum;
       }
 
       @Override
@@ -587,11 +616,12 @@ public class Ast
     {
       public Exp.T condition;
       public T body;
-
-      public While(Exp.T condition, T body)
+    
+      public While(Exp.T condition, T body,int linenum)
       {
         this.condition = condition;
         this.body = body;
+        this.linenum=linenum;
       }
 
       @Override

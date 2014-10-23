@@ -42,8 +42,8 @@ public class Fac
   // // main class: "Factorial"
   static MainClass.T factorial = new MainClassSingle(
       "Factorial", "a",new util.Flist<Stm.T>().list( new Print(new Call(
-          new NewObject("Fac"), "ComputeFac",
-          new util.Flist<Exp.T>().list(new Num(10))))));
+          new NewObject("Fac",1), "ComputeFac",
+          new util.Flist<Exp.T>().list(new Num(10,1)),1),1)));
 
   // // class "Fac"
   static ast.Ast.Class.T fac = new ast.Ast.Class.ClassSingle("Fac", null,
@@ -53,14 +53,14 @@ public class Fac
               .list(new Dec.DecSingle(new Type.Int(), "num")),
           new util.Flist<Dec.T>().list(new Dec.DecSingle(
               new Type.Int(), "num_aux")), new util.Flist<Stm.T>()
-              .list(new If(new Lt(new Id("num"),
-                  new Num(1)), new Assign("num_aux",
-                  new Num(1)), new Assign("num_aux",
-                  new Times(new Id("num"), new Call(
-                      new This(), "ComputeFac",
+              .list(new If(new Lt(new Id("num",1),
+                  new Num(1,1),1), new Assign("num_aux",
+                  new Num(1,1),1), new Assign("num_aux",
+                  new Times(new Id("num",1), new Call(
+                      new This(1), "ComputeFac",
                       new util.Flist<Exp.T>().list(new Sub(
-                          new Id("num"), new Num(1)))))))),
-          new Id("num_aux"))));
+                          new Id("num",1), new Num(1,1),1)),1),1),1),1)),
+          new Id("num_aux",1))));
 
   // program
   public static Program.T prog = new ProgramSingle(factorial,
@@ -74,8 +74,8 @@ public class Fac
  
   static MainClass.T Sum = new MainClassSingle(
 	      "Sum", "a", new util.Flist<Stm.T>().list( new Print(new Call(
-	          new NewObject("Doit"), "doit",
-	          new util.Flist<Exp.T>().list(new Num(101))))));
+	          new NewObject("Doit",1), "doit",
+	          new util.Flist<Exp.T>().list(new Num(101,1)),1),1)));
   
   
   static ast.Ast.Class.T summ = new ast.Ast.Class.ClassSingle("Sum", null,
@@ -86,14 +86,14 @@ public class Fac
 	          new util.Flist<Dec.T>().list(new Dec.DecSingle(
 	              new Type.Int(), "sum"),new Dec.DecSingle(
 	    	              new Type.Int(), "i")), 
-	    	              new util.Flist<Stm.T>().list(new Assign("i",new Num(0)), 
-	    	            		  new Assign("sum",new Exp.False()),
-	    	            		  new Assign("sum",new Num(0)),
-	    	            		  new While(new Lt(new Id("i"),new Id("n")),
+	    	              new util.Flist<Stm.T>().list(new Assign("i",new Num(0,1),1), 
+	    	            		  new Assign("sum",new Exp.False(1),1),
+	    	            		  new Assign("sum",new Num(0,1),1),
+	    	            		  new While(new Lt(new Id("i",1),new Id("n",1),1),
 	    	            				  new Stm.Block(new util.Flist<Stm.T>().list( 
-	    	            						  new Assign("sum",new Add(new Id("sum"),new Id("i"))),
-	    	            	            		  new Assign("i",new Add(new Id("i"),new Num(1))))))),
-	          new Id("sum"))));
+	    	            						  new Assign("sum",new Add(new Id("sum",1),new Id("i",1),1),1),
+	    	            	            		  new Assign("i",new Add(new Id("i",1),new Num(1,1),1),1)),1),1)),
+	          new Id("sum",1))));
   
   public static Program.T prog2 =new ProgramSingle(Sum,
 		  new util.Flist<ast.Ast.Class.T>().list(summ));

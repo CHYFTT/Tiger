@@ -19,7 +19,6 @@ import ast.Ast.Exp.True;
 import ast.Ast.MainClass;
 import ast.Ast.Class.ClassSingle;
 import ast.Ast.Dec;
-import ast.Ast.Dec.DecSingle;
 import ast.Ast.Exp;
 import ast.Ast.Exp.Add;
 import ast.Ast.Exp.And;
@@ -46,18 +45,38 @@ public class ElaboratorVisitor implements ast.Visitor
   public String currentClass; // the class name being elaborated
   public Type.T type; // type of the expression being elaborated
   public String currentMethod;
+  public int linenum;
   public ElaboratorVisitor()
   {
     this.classTable = new ClassTable();
     this.methodTable = new MethodTable();
     this.currentClass = null;
     this.type = null;
+    
   }
-
-  private void error()
+private void error()
+{
+	System.exit(1);
+}
+  private void error(int c,int linenum)
   {
-    System.out.println("type mismatch");
-    System.exit(1);
+	  switch(c){
+	  case 1:
+		  System.out.println("error:type mismatch at line "+linenum);
+		  System.exit(1);
+		  break;
+	  case 2:
+		  System.out.println("error:un decl var at line "+linenum);
+		  System.exit(1);
+		  break;
+	  case 3:
+		  System.out.println("error:return val mis at line "+linenum);
+		  System.exit(1);
+	  }
+	  
+    
+    
+    
   }
 
   // /////////////////////////////////////////////////////
@@ -69,9 +88,9 @@ public class ElaboratorVisitor implements ast.Visitor
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error();
-	  if(!t.toString().equals("@int"))
-		  error();
+		  error(1,e.linenum);								//不匹配
+	  if(!t.toString().equals("@int"))			//类型不对
+		  error(1,e.linenum);
 	  return;
 	  
   }
@@ -83,7 +102,7 @@ public class ElaboratorVisitor implements ast.Visitor
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error();
+		  error(1,e.linenum);
 	  return;
   }
 
@@ -104,7 +123,7 @@ public class ElaboratorVisitor implements ast.Visitor
       ty = (ClassType) leftty;
       e.type = ty.id;
     } else
-      error();
+      error(1,e.linenum);
     MethodType mty = this.classTable.getm(ty.id, e.id);
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
     for (Exp.T a : e.args) {
@@ -112,13 +131,13 @@ public class ElaboratorVisitor implements ast.Visitor
       argsty.addLast(this.type);
     }
     if (mty.argsType.size() != argsty.size())
-      error();
+      error(1,e.linenum);
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
         ;
       else
-        error();
+        error(1,e.linenum);
     }
     this.type = mty.retType;
     e.at = argsty;
@@ -145,7 +164,7 @@ public class ElaboratorVisitor implements ast.Visitor
       e.isField = true;
     }
     if (type == null)
-      error();
+      error(2,e.linenum);
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
@@ -165,7 +184,7 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error();
+      error(1,e.linenum);
     this.type = new Type.Boolean();
     return;
   }
@@ -175,7 +194,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
 	  e.exp.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error();
+		  error(1,e.linenum);
   }
 
   @Override
@@ -206,7 +225,7 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error();
+      error(1,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -225,7 +244,7 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error();
+    	error(1,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -246,11 +265,11 @@ public class ElaboratorVisitor implements ast.Visitor
     if (type == null)
       type = this.classTable.get(this.currentClass, s.id);
     if (type == null)
-      error();
+    	error(2,s.linenum);
     s.exp.accept(this);
     //s.type = type;
     if(!this.type.toString().equals(type.toString()))
-    	error();
+    	error(1,s.linenum);
     return;
   }
 
@@ -261,15 +280,15 @@ public class ElaboratorVisitor implements ast.Visitor
 	  if(t==null)
 		  t=this.classTable.get(this.currentClass, s.id);
 	  if(t==null)
-		  error();
+		  error(2,s.linenum);
 	  s.index.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error();
+		  error(1,s.linenum);
 	  
 	  s.exp.accept(this);
 	  
 		  if(!this.type.toString().equals("@int"))
-			  error();
+			  error(1,s.linenum);
 	  
   }
 
@@ -285,7 +304,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-      error();
+    	error(1,s.linenum);
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -296,7 +315,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
     s.exp.accept(this);
     if (!this.type.toString().equals("@int"))
-      error();
+    	error(1,s.linenum);
     return;
   }
 
@@ -305,7 +324,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
 	  s.condition.accept(this);
 	  if(!this.type.toString().equals("@boolean"))
-		  error();
+		  error(1,s.linenum);
 	  s.body.accept(this);
 	  return;
   }
@@ -361,10 +380,20 @@ public class ElaboratorVisitor implements ast.Visitor
 
     for (Stm.T s : m.stms)
     {
-    	System.out.println("This is the Stm:"+s );
+    	System.out.println("This is the Stm:"+s.linenum );
     	s.accept(this);
+    	linenum=s.linenum;
     }
+    ClassBinding cb=this.classTable.get(currentClass);
+    MethodType methodtype=cb.methods.get(m.id);
+    
      m.retExp.accept(this);
+     if(!methodtype.retType.toString().equals(this.type.toString()))//Why??
+    	 //methodtype.retType==this.type
+     {
+    	 
+    	 error(3,linenum);
+     }
     return;
   }
 
