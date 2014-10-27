@@ -41,68 +41,95 @@ public class CommandLine
   @SuppressWarnings("unchecked")
   public CommandLine()
   {
-    this.args = new util.Flist<Arg<Object>>().list(new Arg<Object>("dump",
-        "{ast}", "dump information about the given ir", Kind.String, (ss) -> {
-          String s = (String) ss;
-          if (s.equals("ast")) {
-            control.Control.ConAst.dumpAst = true;
-          } else {
-            System.out.println("bad argument: " + s);
-            output();
-            System.exit(1);
-          }
-          return;
-        }), new Arg<Object>("elab", "<arg>",
-        "dump information about elaboration", Kind.String, (ss) -> {
-          String s = (String) ss;
-          if (s.equals("classTable")) {
-            control.Control.ConAst.elabClassTable = true;
-          } else if (s.equals("methodTable"))
-            Control.ConAst.elabMethodTable = true;
-          else {
-            System.out.println("bad argument: " + s);
-            output();
-            System.exit(1);
-          }
-          return;
-        }), new Arg<Object>("help", null, "show this help information",
-        Kind.Empty, (s) -> {
-          usage();
-          System.exit(1);
-          return;
-        }), new Arg<Object>("lex", null, "dump the result of lexical analysis",
-        Kind.Empty, (s) -> {
-          Control.ConLexer.dump = true;
-          return;
-        }), new Arg<Object>("slp", "{args|interp|compile}",
-        "run the SLP interpreter", Kind.String, (ss) -> {
-          String s = (String) ss;
+    this.args = new util.Flist<Arg<Object>>()
+        .list(
+            new Arg<Object>(
+                "codegen",
+                "{bytecode|C|dalvik|x86}",
+                "which code generator to use",
+                Kind.String,
+                (ss) -> {
+                  String s = (String) ss;
+                  if (s.equals("bytecode")) {
+                    control.Control.ConCodeGen.codegen = control.Control.ConCodeGen.Kind_t.Bytecode;
+                  } else if (s.equals("C")) {
+                    control.Control.ConCodeGen.codegen = control.Control.ConCodeGen.Kind_t.C;
+                  } else if (s.equals("dalvik")) {
+                    control.Control.ConCodeGen.codegen = control.Control.ConCodeGen.Kind_t.Dalvik;
+                  } else if (s.equals("x86")) {
+                    control.Control.ConCodeGen.codegen = control.Control.ConCodeGen.Kind_t.X86;
+                  } else {
+                    System.out.println("bad argument: " + s);
+                    output();
+                    System.exit(1);
+                  }
+                  return;
+                }), new Arg<Object>("dump", "{ast}",
+                "dump information about the given ir", Kind.String, (ss) -> {
+                  String s = (String) ss;
+                  if (s.equals("ast")) {
+                    control.Control.ConAst.dumpAst = true;
+                  } else {
+                    System.out.println("bad argument: " + s);
+                    output();
+                    System.exit(1);
+                  }
+                  return;
+                }), new Arg<Object>("elab", "<arg>",
+                "dump information about elaboration", Kind.String, (ss) -> {
+                  String s = (String) ss;
+                  if (s.equals("classTable")) {
+                    control.Control.ConAst.elabClassTable = true;
+                  } else if (s.equals("methodTable"))
+                    Control.ConAst.elabMethodTable = true;
+                  else {
+                    System.out.println("bad argument: " + s);
+                    output();
+                    System.exit(1);
+                  }
+                  return;
+                }), new Arg<Object>("help", null, "show this help information",
+                Kind.Empty, (s) -> {
+                  usage();
+                  System.exit(1);
+                  return;
+                }), new Arg<Object>("lex", null,
+                "dump the result of lexical analysis", Kind.Empty, (s) -> {
+                  Control.ConLexer.dump = true;
+                  return;
+                }), new Arg<Object>("slp", "{args|interp|compile}",
+                "run the SLP interpreter", Kind.String, (ss) -> {
+                  String s = (String) ss;
 
-          if (s.equals("args")) {
-            ConSlp.action = ConSlp.T.ARGS;
-          } else if (s.equals("interp"))
-            ConSlp.action = ConSlp.T.INTERP;
-          else if (s.equals("compile"))
-            ConSlp.action = ConSlp.T.COMPILE;
-          else if (s.equals("div"))
-            ConSlp.div = true;
-          else if (s.equals("keepasm"))
-            ConSlp.keepasm = true;
-          else {
-            System.out.println("bad argument: " + s);
-            output();
-            System.exit(1);
-          }
-        }), new Arg<Object>("testFac", null,
-        "whether or not to test the Tiger compiler on Fac.java", Kind.Empty,
-        (s) -> {
-          Control.ConAst.testFac = true;
-          return;
-        }), new Arg<Object>("testlexer", null,
-        "whether or not to test the lexer", Kind.Empty, (s) -> {
-          Control.ConLexer.test = true;
-          return;
-        }));
+                  if (s.equals("args")) {
+                    ConSlp.action = ConSlp.T.ARGS;
+                  } else if (s.equals("interp"))
+                    ConSlp.action = ConSlp.T.INTERP;
+                  else if (s.equals("compile"))
+                    ConSlp.action = ConSlp.T.COMPILE;
+                  else if (s.equals("div"))
+                    ConSlp.div = true;
+                  else if (s.equals("keepasm"))
+                    ConSlp.keepasm = true;
+                  else {
+                    System.out.println("bad argument: " + s);
+                    output();
+                    System.exit(1);
+                  }
+                }), new Arg<Object>("output", "<outfile>",
+                "set the name of the output file", Kind.String, (Object s) -> {
+                  Control.ConCodeGen.outputName = (String) s;
+                  return;
+                }), new Arg<Object>("testFac", null,
+                "whether or not to test the Tiger compiler on Fac.java",
+                Kind.Empty, (s) -> {
+                  Control.ConAst.testFac = true;
+                  return;
+                }), new Arg<Object>("testlexer", null,
+                "whether or not to test the lexer", Kind.Empty, (s) -> {
+                  Control.ConLexer.test = true;
+                  return;
+                }));
   }
 
   // scan the command line arguments, return the file name

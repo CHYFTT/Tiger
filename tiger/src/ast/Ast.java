@@ -4,7 +4,6 @@ import java.util.LinkedList;
 
 public class Ast
 {
-	 
 
   // ///////////////////////////////////////////////////////////
   // type
@@ -713,9 +712,9 @@ public class Ast
     {
       public String id;//Sum
       public String arg;//a
-      public LinkedList<Stm.T>  stm;//system.out.println
+      public  Stm.T  stm;//system.out.println
 
-      public MainClassSingle(String id, String arg, LinkedList<Stm.T>  stm)
+      public MainClassSingle(String id, String arg,  Stm.T  stm)
       {
         this.id = id;
         this.arg = arg;

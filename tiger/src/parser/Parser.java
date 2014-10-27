@@ -651,7 +651,7 @@ public class Parser {
 		// main   String id, String arg, LinkedList<Stm.T>  stm
 		String id;
 		String arg;
-		LinkedList<Stm.T> stm;
+		Stm.T stm;
 		
 		eatToken(Kind.TOKEN_CLASS);
 		id=current.lexeme;
@@ -669,7 +669,7 @@ public class Parser {
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_RPAREN);
 		eatToken(Kind.TOKEN_LBRACE);
-		stm=parseStatements();
+		stm=parseStatement();
 		eatToken(Kind.TOKEN_RBRACE);
 		
 
