@@ -88,8 +88,8 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);								//不匹配
-	  if(!t.toString().equals("@int"))			//类型不对
+		  error(1,e.linenum);								//涓嶅尮閰�
+	  if(!t.toString().equals("@int"))			//绫诲瀷涓嶅
 		  error(1,e.linenum);
 	  return;
 	  
@@ -371,8 +371,8 @@ private void error()
   public void visit(Method.MethodSingle m)
   {
     // construct the method table
-	this.methodTable = new  MethodTable();//每一个方法有一张MethodTable，因为不同方法
-											//中的变量可以重名
+	this.methodTable = new  MethodTable();//姣忎竴涓柟娉曟湁涓�寮燤ethodTable锛屽洜涓轰笉鍚屾柟娉�
+											//涓殑鍙橀噺鍙互閲嶅悕
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
@@ -418,9 +418,9 @@ private void error()
     this.currentClass = c.id;
     // "main" has an argument "arg" of type "String[]", but
     // one has no chance to use it. So it's safe to skip it...
-
-    for(Ast.Stm.T s:c.stm)
-    	s.accept(this);
+    
+    c.stm.accept(this);
+    
     return;
   }
 
@@ -439,8 +439,8 @@ private void error()
     //VarDecls
     for (Dec.T dec : c.decs) {
       Dec.DecSingle d = (Dec.DecSingle) dec;
-      this.classTable.put(c.id, d.id, d.type);//根据ClassSingle的id去找buildClass，
-		  										//根据结果将d的id与Type放入对应ClassBinding的field表中
+      this.classTable.put(c.id, d.id, d.type);//鏍规嵁ClassSingle鐨刬d鍘绘壘buildClass锛�
+		  										//鏍规嵁缁撴灉灏哾鐨刬d涓嶵ype鏀惧叆瀵瑰簲ClassBinding鐨刦ield琛ㄤ腑
     }
     //Method
     for (Method.T method : c.methods) {

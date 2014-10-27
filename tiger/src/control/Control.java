@@ -29,4 +29,17 @@ public class Control
     public static boolean elabClassTable = false;
     public static boolean elabMethodTable = false;
   }
+  
+  public static class ConCodeGen
+  {
+    public static String fileName = null;
+
+    public static String outputName = null;
+
+    public static enum Kind_t {
+      Bytecode, C, Dalvik, X86
+    }
+
+    public static Kind_t codegen = Kind_t.C;
+  }
 }
