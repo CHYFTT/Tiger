@@ -8,7 +8,6 @@ class Doit {
     public int doit(int n) {
         int sum;
         int i;
-        int j[10];
         
         i = 0;
         sum = 0;
