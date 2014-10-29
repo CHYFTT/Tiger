@@ -385,8 +385,7 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("{");
     this.sayln("  public static void main (String [] " + c.arg + ")");
     this.sayln("  {");
-    
-    	c.accept(this);
+    c.stm.accept(this);
     this.sayln("  }");
     this.sayln("}");
     return;
@@ -400,6 +399,7 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("");
     for (ast.Ast.Class.T classs : p.classes) {
       classs.accept(this);
+      
     }
     System.out.println("\n\n");
   }
