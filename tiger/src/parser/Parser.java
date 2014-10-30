@@ -40,7 +40,7 @@ public class Parser {
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
-	int linenum;
+	int linenum=1;
 	
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
@@ -55,7 +55,7 @@ public class Parser {
 
 	private void advance() // advance() can get the nextToken
 	{
-		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + linenum);
+		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + current.lineNum);
 		linenum=current.lineNum;
 		current = lexer.nextToken();
 	}

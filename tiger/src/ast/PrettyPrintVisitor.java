@@ -133,6 +133,7 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(Length e)
   {
 	  e.array.accept(this);
+	  this.say(".length");
   }
 
   @Override
@@ -395,6 +396,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Program.ProgramSingle p)
   {
+	  
     p.mainClass.accept(this);
     this.sayln("");
     for (ast.Ast.Class.T classs : p.classes) {

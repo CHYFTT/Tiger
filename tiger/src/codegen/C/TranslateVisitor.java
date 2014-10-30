@@ -12,6 +12,8 @@ import codegen.C.Ast.Exp.Lt;
 import codegen.C.Ast.Exp.NewObject;
 import codegen.C.Ast.Exp.Num;
 import codegen.C.Ast.Exp.Sub;
+import codegen.C.Ast.Exp.Add;
+import codegen.C.Ast.Exp.And;
 import codegen.C.Ast.Exp.This;
 import codegen.C.Ast.Exp.Times;
 import codegen.C.Ast.MainMethod;
@@ -29,7 +31,7 @@ import codegen.C.Ast.Type.ClassType;
 import codegen.C.Ast.Vtable;
 import codegen.C.Ast.Vtable.VtableSingle;
 
-// Given a Java ast, translate it into a C ast and outputs it.
+// Given a Java AST, translate it into a C AST and outputs it.
 
 public class TranslateVisitor implements ast.Visitor
 {
@@ -39,12 +41,13 @@ public class TranslateVisitor implements ast.Visitor
   private Dec.T dec;
   private Stm.T stm;
   private Exp.T exp;
-  private Method.T method;
-  private LinkedList<Dec.T> tmpVars;
+  private Method.T method;//临时存放生成的Method obj
+  private LinkedList<Dec.T> tmpVars;//!!!在Call中会用到。
+  									//如果调用了方法，就要把对应的类先声明
   private LinkedList<Class.T> classes;
-  private LinkedList<Vtable.T> vtables;
+  private LinkedList<Vtable.T> vtables;//存放所有的方法
   private LinkedList<Method.T> methods;
-  private MainMethod.T mainMethod;
+  private MainMethod.T mainMethod;//main对象
   public Program.T program;
 
   public TranslateVisitor()
@@ -75,11 +78,25 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Add e)
   {
+	    e.left.accept(this);
+	    Exp.T left = this.exp;
+	    e.right.accept(this);
+	    Exp.T right = this.exp;
+	    this.exp = new Add(left, right);
+	    return;
+	  
   }
 
   @Override
   public void visit(ast.Ast.Exp.And e)
   {
+	  e.left.accept(this);
+	    Exp.T left = this.exp;
+	    e.right.accept(this);
+	    Exp.T right = this.exp;
+	    this.exp = new And(left, right);
+	    return;
+	  
   }
 
   @Override
@@ -91,7 +108,7 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.Ast.Exp.Call e)
   {
     e.exp.accept(this);
-    String newid = this.genId();
+    String newid = this.genId();//生成x_0等在mini java AST中不存在的id
     this.tmpVars.add(new Dec.DecSingle(new Type.ClassType(e.type), newid));
     Exp.T exp = this.exp;
     LinkedList<Exp.T> args = new LinkedList<Exp.T>();
@@ -106,6 +123,7 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.False e)
   {
+	  this.exp=new Num(0);
   }
 
   @Override
@@ -118,6 +136,10 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Length e)
   {
+	  this.type=new Type.IntArray();
+	  e.array.accept(this);
+	  Exp.T array=this.exp;
+	  this.exp=new codegen.C.Ast.Exp.Length(array);
   }
 
   @Override
@@ -134,6 +156,7 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.NewIntArray e)
   {
+	  e.exp.accept(this);
   }
 
   @Override
@@ -146,6 +169,8 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Not e)
   {
+	  e.exp.accept(this);
+	  this.type=new Type.Int();
   }
 
   @Override
@@ -187,6 +212,8 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.True e)
   {
+	  this.exp=new Num(1);
+	  
   }
 
   // //////////////////////////////////////////////
@@ -207,6 +234,14 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.Block s)
   {
+	  LinkedList<codegen.C.Ast.Stm.T> tempstms=
+			  new java.util.LinkedList<Ast.Stm.T>();
+	  for(ast.Ast.Stm.T t:s.stms)
+	  {
+		  t.accept(this);
+		  tempstms.add(this.stm);
+	  }
+	  this.stm=new codegen.C.Ast.Stm.Block(tempstms);
   }
 
   @Override
@@ -233,6 +268,12 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.While s)
   {
+	  s.condition.accept(this);
+	  Exp.T condition = this.exp;
+	  s.body.accept(this);
+	  Stm.T body = this.stm;
+	  this.stm=new codegen.C.Ast.Stm.While(condition,body);
+	  return;
   }
 
   // ///////////////////////////////////////////
@@ -240,11 +281,13 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Type.Boolean t)
   {
+	  this.type=new Type.Int();
   }
 
   @Override
   public void visit(ast.Ast.Type.ClassType t)
   {
+	  this.type=new Type.ClassType(t.id);
   }
 
   @Override
@@ -256,6 +299,7 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Type.IntArray t)
   {
+	  this.type=new Type.IntArray();
   }
 
   // ////////////////////////////////////////////////
@@ -275,26 +319,29 @@ public class TranslateVisitor implements ast.Visitor
     this.tmpVars = new LinkedList<Dec.T>();
     m.retType.accept(this);
     Type.T newRetType = this.type;
-    LinkedList<Dec.T> newFormals = new LinkedList<Dec.T>();
+    LinkedList<Dec.T> newFormals = new LinkedList<Dec.T>();//参数列表声明
+    
     newFormals.add(new Dec.DecSingle(
-        new ClassType(this.classId), "this"));
+        new ClassType(this.classId), "this")); //先在参数列表加入一个指向自己类的指针
+    
     for (ast.Ast.Dec.T d : m.formals) {
       d.accept(this);
       newFormals.add(this.dec);
     }
-    LinkedList<Dec.T> locals = new LinkedList<Dec.T>();
+    LinkedList<Dec.T> locals = new LinkedList<Dec.T>();//局部变量声明
     for (ast.Ast.Dec.T d : m.locals) {
       d.accept(this);
       locals.add(this.dec);
     }
     LinkedList<Stm.T> newStm = new LinkedList<Stm.T>();
+    
     for (ast.Ast.Stm.T s : m.stms) {
-      s.accept(this);
+      s.accept(this);				//重点！
       newStm.add(this.stm);
     }
     m.retExp.accept(this);
     Exp.T retExp = this.exp;
-    for (Dec.T dec : this.tmpVars) {
+    for (Dec.T dec : this.tmpVars) {//在声明的最后，补上需要的声明，比如call调用产生的类名。    								
       locals.add(dec);
     }
     this.method = new MethodSingle(newRetType, this.classId, m.id,
@@ -327,10 +374,10 @@ public class TranslateVisitor implements ast.Visitor
     this.vtables.add(new VtableSingle(c.id, cb.methods));
 
     this.tmpVars = new LinkedList<Dec.T>();
+   
 
-    c.stm.accept(this);
-    MainMethod.T mthd = new MainMethodSingle(
-        this.tmpVars, this.stm);
+    c.stm.accept(this);//在这里面可能会往tmpVars里面加Dec对象
+    MainMethod.T mthd = new MainMethodSingle(this.tmpVars, this.stm);
     this.mainMethod = mthd;
     return;
   }
@@ -359,7 +406,7 @@ public class TranslateVisitor implements ast.Visitor
       LinkedList<Dec.T> newDecs = new LinkedList<Dec.T>();
       for (ast.Ast.Dec.T dec : cc.decs) {
         dec.accept(this);
-        newDecs.add(this.dec);
+        newDecs.add(this.dec);//在dec.accept(this)执行后，this.dec变为了一个C类型的Dec
       }
       this.table.initDecs(cc.id, newDecs);
 
@@ -370,7 +417,7 @@ public class TranslateVisitor implements ast.Visitor
         LinkedList<Dec.T> newArgs = new LinkedList<Dec.T>();
         for (ast.Ast.Dec.T arg : m.formals) {
           arg.accept(this);
-          newArgs.add(this.dec);
+          newArgs.add(this.dec);//同上
         }
         m.retType.accept(this);
         Type.T newRet = this.type;
@@ -402,15 +449,19 @@ public class TranslateVisitor implements ast.Visitor
   {
     // The first pass is to scan the whole program "p", and
     // to collect all information of inheritance.
-    scanProgram(p);
+    scanProgram(p);//在scan的过程中，C的classTable已经建好了
+    System.out.println("scan finished...");
 
     // do translations
     p.mainClass.accept(this);
+    System.out.println("new mainClass...");
     for (ast.Ast.Class.T classs : p.classes) {
       classs.accept(this);
     }
+    System.out.println("new Classes");
     this.program = new ProgramSingle(this.classes, this.vtables,
         this.methods, this.mainMethod);
-    return;
+    System.out.println("new program");
+    return ;
   }
 }

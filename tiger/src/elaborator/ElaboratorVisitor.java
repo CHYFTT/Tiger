@@ -174,7 +174,10 @@ private void error()
   @Override
   public void visit(Length e)
   {
-	  this.type=new Type.IntArray();
+	  e.array.accept(this);
+	  
+	  this.type= new Type.Int();
+	  return;
   }
 
   @Override
@@ -195,6 +198,7 @@ private void error()
 	  e.exp.accept(this);
 	  if(!this.type.toString().equals("@int"))
 		  error(1,e.linenum);
+	  this.type=new Type.IntArray();
   }
 
   @Override
@@ -266,8 +270,11 @@ private void error()
       type = this.classTable.get(this.currentClass, s.id);
     if (type == null)
     	error(2,s.linenum);
-    s.exp.accept(this);
-    //s.type = type;
+   
+    s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
+    					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
+    
+    
     if(!this.type.toString().equals(type.toString()))
     	error(1,s.linenum);
     return;
@@ -371,8 +378,7 @@ private void error()
   public void visit(Method.MethodSingle m)
   {
     // construct the method table
-	this.methodTable = new  MethodTable();//姣忎竴涓柟娉曟湁涓�寮燤ethodTable锛屽洜涓轰笉鍚屾柟娉�
-											//涓殑鍙橀噺鍙互閲嶅悕
+	this.methodTable = new  MethodTable();
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
@@ -439,8 +445,7 @@ private void error()
     //VarDecls
     for (Dec.T dec : c.decs) {
       Dec.DecSingle d = (Dec.DecSingle) dec;
-      this.classTable.put(c.id, d.id, d.type);//鏍规嵁ClassSingle鐨刬d鍘绘壘buildClass锛�
-		  										//鏍规嵁缁撴灉灏哾鐨刬d涓嶵ype鏀惧叆瀵瑰簲ClassBinding鐨刦ield琛ㄤ腑
+      this.classTable.put(c.id, d.id, d.type);
     }
     //Method
     for (Method.T method : c.methods) {

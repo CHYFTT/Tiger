@@ -21,7 +21,7 @@ public class ClassTable
   public void initDecs(String current,
       java.util.LinkedList<Dec.T> decs)
   {
-    ClassBinding cb = this.table.get(current);
+    ClassBinding cb = this.table.get(current);//根据类名，找到对应的ClassBunding
     for (Dec.T dec : decs) {
       Dec.DecSingle decc = (Dec.DecSingle) dec;
       cb.put(current, decc.type, decc.id);
@@ -32,7 +32,7 @@ public class ClassTable
   public void initMethod(String current, Type.T ret,
       java.util.LinkedList<Dec.T> args, String mid)
   {
-    ClassBinding cb = this.table.get(current);
+    ClassBinding cb = this.table.get(current);//根据类名找到对应的classBunding
     cb.putm(current, ret, args, mid);
     return;
   }

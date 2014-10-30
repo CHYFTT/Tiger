@@ -127,7 +127,7 @@ public class Tiger
     // elaborate the AST, report all possible errors.
     elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
     theAst.accept(elab);
-    System.out.println("Lab3 is finished....to be continue...");
+    System.out.println("Lab2 is finished....to be continue...");
 
     // code generation
     switch (control.Control.ConCodeGen.codegen) {
@@ -139,11 +139,13 @@ public class Tiger
       bytecodeAst.accept(ppbc);
       break;
     case C:
+    	System.out.println("start....");
       codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
       theAst.accept(transC);
       codegen.C.Ast.Program.T cAst = transC.program;
       codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
       cAst.accept(ppc);
+      System.out.println("finished...");
       break;
     case Dalvik:
       // similar
