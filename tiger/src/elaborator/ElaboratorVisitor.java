@@ -109,6 +109,14 @@ private void error()
   @Override
   public void visit(ArraySelect e)
   {
+	  
+	  e.index.accept(this);
+	  if(!this.type.toString().equals("@int"))
+		  error(1,e.linenum);
+	  e.array.accept(this);
+	  //System.out.println(this.type.toString());
+	  
+	  return;
   }
 
   @Override
@@ -267,35 +275,61 @@ private void error()
     Type.T type = this.methodTable.get(s.id);
     // if search failed, then s.id must
     if (type == null)
+    {
       type = this.classTable.get(this.currentClass, s.id);
+      s.isField=true;
+    }
     if (type == null)
     	error(2,s.linenum);
-   
+    //s.isField=true;
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
     					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
-    
-    
-    if(!this.type.toString().equals(type.toString()))
-    	error(1,s.linenum);
+    //System.out.println(s.exp.getClass().getName());
+    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+    {
+    	if(!this.type.toString().equals(type.toString()))
+    		error(1,s.linenum);
+    }
+    else
+    {
+    	if(!type.toString().equals("@int"))
+    		error(1,s.linenum);
+    }
     return;
   }
 
   @Override
   public void visit(AssignArray s)
   {
-	  Type.T t=this.methodTable.get(s.id);
-	  if(t==null)
-		  t=this.classTable.get(this.currentClass, s.id);
-	  if(t==null)
+	  Type.T type=this.methodTable.get(s.id);
+	 
+	  if(type==null)
+	  {
+		  type=this.classTable.get(this.currentClass, s.id);
+		  s.isField=true;
+	  }
+	  if(type==null)
 		  error(2,s.linenum);
+	  //判断索引号
+	 // System.out.println(type.toString());// ---------------------------------------
 	  s.index.accept(this);
 	  if(!this.type.toString().equals("@int"))
 		  error(1,s.linenum);
-	  
+	  //System.out.println("index finished.................");
+	  //判断id类型
 	  s.exp.accept(this);
-	  
+	 // System.out.println(s.exp.getClass().getName());
+	  if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+	  {
 		  if(!this.type.toString().equals("@int"))
 			  error(1,s.linenum);
+	  }
+	  else
+	  {
+		  if(!type.toString().equals("@int[]"))
+			  error(1,s.linenum);
+		  
+	  }
 	  
   }
 
@@ -321,8 +355,16 @@ private void error()
   public void visit(Print s)
   {
     s.exp.accept(this);
-    if (!this.type.toString().equals("@int"))
-    	error(1,s.linenum);
+    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+    {
+    	if (!this.type.toString().equals("@int"))
+    		error(1,s.linenum);
+    }
+    else
+    {
+    	if (!this.type.toString().equals("@int[]"))
+    		error(1,s.linenum);
+    }
     return;
   }
 

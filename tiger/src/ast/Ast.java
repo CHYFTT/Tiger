@@ -609,12 +609,14 @@ public class Ast
       public String id;
       public Exp.T exp;
       public Type.T type; // type of the id
+      public boolean isField;
     
       public Assign(String id, Exp.T exp,int linenum)
       {
         this.id = id;
         this.exp = exp;
         this.type = null;
+        isField=false;
         this.linenum=linenum;
       }
       public Assign(String id, Exp.T exp)
@@ -622,6 +624,7 @@ public class Ast
         this.id = id;
         this.exp = exp;
         this.type = null;
+        isField=false;
         this.linenum=0;
       }
       public Assign(Type.T type)
@@ -636,12 +639,13 @@ public class Ast
       }
     }
 
-    // assign-array
+    // assign-array   number[10]=exp;
     public static class AssignArray extends T
     {
       public String id;
       public Exp.T index;
       public Exp.T exp;
+      public boolean isField;
       
 
       public AssignArray(String id, Exp.T index, Exp.T exp,int linenum)
@@ -649,6 +653,7 @@ public class Ast
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.isField=false;
         this.linenum=linenum;
       }
       public AssignArray(String id, Exp.T index, Exp.T exp)
@@ -656,6 +661,7 @@ public class Ast
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.isField=false;
         this.linenum=0;
       }
 

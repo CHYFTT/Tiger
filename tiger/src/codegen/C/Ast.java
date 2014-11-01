@@ -3,6 +3,8 @@ package codegen.C;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import ast.Ast.Type.T;
+
 public class Ast
 {
   // /////////////////////////////////////////////
@@ -195,10 +197,19 @@ public class Ast
     public static class Id extends T
     {
       public String id;
+      public boolean isField;
+	  //public Type.T type;
 
       public Id(String id)
       {
         this.id = id;
+      }
+      
+      public Id(String id,boolean isField)
+      {
+        this.id = id;
+        this.isField=isField;
+        //this.type=type;
       }
 
       @Override
@@ -385,11 +396,13 @@ public class Ast
     {
       public String id;
       public Exp.T exp;
+      public boolean isField;
 
-      public Assign(String id, Exp.T exp)
+      public Assign(String id, Exp.T exp,boolean isField)
       {
         this.id = id;
         this.exp = exp;
+        this.isField=isField;
       }
 
       @Override
@@ -404,12 +417,14 @@ public class Ast
       public String id;
       public Exp.T index;
       public Exp.T exp;
+      public boolean isField;
 
-      public AssignArray(String id, Exp.T index, Exp.T exp)
+      public AssignArray(String id, Exp.T index, Exp.T exp,boolean isField)
       {
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.isField=isField;
       }
 
       @Override

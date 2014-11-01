@@ -2,6 +2,7 @@ package codegen.C;
 
 import java.util.LinkedList;
 
+import ast.Ast.Type.T;
 import codegen.C.Ast.Class;
 import codegen.C.Ast.Class.ClassSingle;
 import codegen.C.Ast.Dec;
@@ -135,7 +136,9 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Id e)
   {
-    this.exp = new Id(e.id);
+	  
+	  boolean isField=e.isField;
+	  this.exp = new Id(e.id,isField);
     return;
   }
 
@@ -229,19 +232,21 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.Assign s)
   {
+	  boolean isField=s.isField;
     s.exp.accept(this);
-    this.stm = new Assign(s.id, this.exp);
+    this.stm = new Assign(s.id, this.exp,isField);
     return;
   }
 
   @Override
   public void visit(ast.Ast.Stm.AssignArray s)
   {
+	  boolean isField=s.isField;
 	  s.index.accept(this);
 	  Exp.T index=this.exp;
 	  s.exp.accept(this);
 	  
-	  this.stm=new codegen.C.Ast.Stm.AssignArray(s.id, index, exp);
+	  this.stm=new codegen.C.Ast.Stm.AssignArray(s.id, index, exp,isField);
   }
 
   @Override

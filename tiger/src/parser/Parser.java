@@ -42,6 +42,7 @@ public class Parser {
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
 	int linenum=1;
+	Type.T currentType=null;
 	
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
@@ -134,7 +135,7 @@ public class Parser {
 		case TOKEN_ID:
 			s=current.lexeme;
 			advance();
-			return new Id(s,linenum);
+			return new Id(s,currentType,false,linenum);
 		case TOKEN_NEW: {
 			advance();
 			switch (current.kind) {
@@ -442,16 +443,20 @@ public class Parser {
 			{
 				eatToken(Kind.TOKEN_LBRACK);
 				eatToken(Kind.TOKEN_RBRACK);
-				return new Type.IntArray() ;
+				currentType=new Type.IntArray();
+				return currentType ;
 			}
-			return new Type.Int();
+			currentType=new Type.Int();
+			return currentType;
 		case TOKEN_BOOLEAN:
 			eatToken(Kind.TOKEN_BOOLEAN);
-			return new Type.Boolean();
+			currentType=new Type.Boolean();
+			return currentType;
 		default:
 			String s=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
-			return new Type.ClassType(s);
+			currentType=new Type.ClassType(s);
+			return currentType;
 		}
 	}
 
