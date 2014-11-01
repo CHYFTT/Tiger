@@ -29,7 +29,7 @@ public class ClassBinding
   public void put(String xid, Type.T type)
   {
     if (this.fields.get(xid) != null) {
-      System.out.println("duplicated class field: " + xid+" at line:");
+      System.out.println("duplicated class field: " + xid);
       System.exit(1);
     }
     this.fields.put(xid, type);
@@ -37,8 +37,7 @@ public class ClassBinding
 
   public void put(String mid, MethodType mt)
   {
-    if (this.methods.get(mid) != null) {//当没有重名方法时，将对应的方法放入
-										//ClassBindling的methods表
+    if (this.methods.get(mid) != null) {
       System.out.println("duplicated class method: " + mid);
       System.exit(1);
     }

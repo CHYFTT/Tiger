@@ -4,7 +4,6 @@ import static control.Control.ConAst.testFac;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 
 import ast.Ast.Program;
 import lexer.Lexer;
@@ -19,7 +18,6 @@ public class Tiger
   {
     InputStream fstream;
     Parser parser;
-    PushbackInputStream f;
 
     // ///////////////////////////////////////////////////////
     // handle command line arguments
@@ -85,8 +83,7 @@ public class Tiger
       System.out.println("Testing the lexer. All tokens:");
       try {
         fstream = new BufferedInputStream(new FileInputStream(fname));
-        f=new PushbackInputStream(fstream);
-        Lexer lexer = new Lexer(fname, f);
+        Lexer lexer = new Lexer(fname, fstream);
         Token token = lexer.nextToken();
 
         while (token.kind != Token.Kind.TOKEN_EOF) {
@@ -107,8 +104,7 @@ public class Tiger
     // parsing the file, get an AST.
     try {
       fstream = new BufferedInputStream(new FileInputStream(fname));
-      f=new PushbackInputStream(fstream);
-      parser = new Parser(fname, f);
+      parser = new Parser(fname, fstream);
 
       theAst = parser.parse();
 
@@ -127,7 +123,6 @@ public class Tiger
     // elaborate the AST, report all possible errors.
     elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
     theAst.accept(elab);
-    System.out.println("Lab3 is finished....to be continue...");
 
     // code generation
     switch (control.Control.ConCodeGen.codegen) {

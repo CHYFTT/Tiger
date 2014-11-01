@@ -17,7 +17,7 @@ public class ClassTable
   public void put(String c, ClassBinding cb)
   {
     if (this.table.get(c) != null) {
-      System.out.println("duplicated class: " + c+"at line:");
+      System.out.println("duplicated class: " + c);
       System.exit(1);
     }
     this.table.put(c, cb);
@@ -37,7 +37,7 @@ public class ClassTable
   // Also note that MiniJava does NOT allow overloading.
   public void put(String c, String id, MethodType type)
   {
-    ClassBinding cb = this.table.get(c);//根据类名找对应的ClassBindling对象
+    ClassBinding cb = this.table.get(c);
     cb.put(id, type);
     return;
   }
@@ -82,8 +82,7 @@ public class ClassTable
 
   public void dump()
   {
-	  System.out.println("<String---ClassBinding>");
-	  System.out.println(this.table);
+    new Todo();
   }
 
   @Override

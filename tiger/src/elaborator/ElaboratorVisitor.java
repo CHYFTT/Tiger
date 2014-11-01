@@ -2,8 +2,14 @@ package elaborator;
 
 import java.util.LinkedList;
 
-import ast.Ast;
 import ast.Ast.Class;
+import ast.Ast.Class.ClassSingle;
+import ast.Ast.Dec;
+import ast.Ast.Exp;
+import ast.Ast.Exp.Add;
+import ast.Ast.Exp.And;
+import ast.Ast.Exp.ArraySelect;
+import ast.Ast.Exp.Call;
 import ast.Ast.Exp.False;
 import ast.Ast.Exp.Id;
 import ast.Ast.Exp.Length;
@@ -17,13 +23,6 @@ import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
 import ast.Ast.Exp.True;
 import ast.Ast.MainClass;
-import ast.Ast.Class.ClassSingle;
-import ast.Ast.Dec;
-import ast.Ast.Exp;
-import ast.Ast.Exp.Add;
-import ast.Ast.Exp.And;
-import ast.Ast.Exp.ArraySelect;
-import ast.Ast.Exp.Call;
 import ast.Ast.Method;
 import ast.Ast.Method.MethodSingle;
 import ast.Ast.Program.ProgramSingle;
@@ -44,39 +43,19 @@ public class ElaboratorVisitor implements ast.Visitor
   public MethodTable methodTable; // symbol table for each method
   public String currentClass; // the class name being elaborated
   public Type.T type; // type of the expression being elaborated
-  public String currentMethod;
-  public int linenum;
+
   public ElaboratorVisitor()
   {
     this.classTable = new ClassTable();
     this.methodTable = new MethodTable();
     this.currentClass = null;
     this.type = null;
-    
   }
-private void error()
-{
-	System.exit(1);
-}
-  private void error(int c,int linenum)
+
+  private void error()
   {
-	  switch(c){
-	  case 1:
-		  System.out.println("error:type mismatch at line "+linenum);
-		  System.exit(1);
-		  break;
-	  case 2:
-		  System.out.println("error:un decl var at line "+linenum);
-		  System.exit(1);
-		  break;
-	  case 3:
-		  System.out.println("error:return val mis at line "+linenum);
-		  System.exit(1);
-	  }
-	  
-    
-    
-    
+    System.out.println("type mismatch");
+    System.exit(1);
   }
 
   // /////////////////////////////////////////////////////
@@ -84,26 +63,11 @@ private void error()
   @Override
   public void visit(Add e)
   {
-	  e.left.accept(this);
-	  Type.T t=this.type;
-	  e.right.accept(this);
-	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);								//涓嶅尮閰�
-	  if(!t.toString().equals("@int"))			//绫诲瀷涓嶅
-		  error(1,e.linenum);
-	  return;
-	  
   }
 
   @Override
   public void visit(And e)
   {
-	  e.left.accept(this);
-	  Type.T t=this.type;
-	  e.right.accept(this);
-	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);
-	  return;
   }
 
   @Override
@@ -123,24 +87,39 @@ private void error()
       ty = (ClassType) leftty;
       e.type = ty.id;
     } else
-      error(1,e.linenum);
+      error();
     MethodType mty = this.classTable.getm(ty.id, e.id);
+
+    java.util.LinkedList<Type.T> declaredArgTypes
+    = new java.util.LinkedList<Type.T>();
+    for (Dec.T dec: mty.argsType){
+      declaredArgTypes.add(((Dec.DecSingle)dec).type);
+    }
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
     for (Exp.T a : e.args) {
       a.accept(this);
       argsty.addLast(this.type);
     }
-    if (mty.argsType.size() != argsty.size())
-      error(1,e.linenum);
+    if (declaredArgTypes.size() != argsty.size())
+      error();
+    // For now, the following code only checks that
+    // the types for actual and formal arguments should
+    // be the same. However, in MiniJava, the actual type
+    // of the parameter can also be a subtype (sub-class) of the 
+    // formal type. That is, one can pass an object of type "A"
+    // to a method expecting a type "B", whenever type "A" is
+    // a sub-class of type "B".
+    // Modify the following code accordingly:
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
         ;
       else
-        error(1,e.linenum);
+        error();
     }
     this.type = mty.retType;
-    e.at = argsty;
+    // the following two types should be the declared types.
+    e.at = declaredArgTypes;
     e.rt = this.type;
     return;
   }
@@ -148,7 +127,6 @@ private void error()
   @Override
   public void visit(False e)
   {
-	  this.type=new Type.Boolean();
   }
 
   @Override
@@ -164,7 +142,7 @@ private void error()
       e.isField = true;
     }
     if (type == null)
-      error(2,e.linenum);
+      error();
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
@@ -174,7 +152,6 @@ private void error()
   @Override
   public void visit(Length e)
   {
-	  this.type=new Type.IntArray();
   }
 
   @Override
@@ -184,7 +161,7 @@ private void error()
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error(1,e.linenum);
+      error();
     this.type = new Type.Boolean();
     return;
   }
@@ -192,9 +169,6 @@ private void error()
   @Override
   public void visit(NewIntArray e)
   {
-	  e.exp.accept(this);
-	  if(!this.type.toString().equals("@int"))
-		  error(1,e.linenum);
   }
 
   @Override
@@ -207,8 +181,6 @@ private void error()
   @Override
   public void visit(Not e)
   {
-	  e.exp.accept(this);
-	  this.type=new Type.Boolean();
   }
 
   @Override
@@ -225,7 +197,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error(1,e.linenum);
+      error();
     this.type = new Type.Int();
     return;
   }
@@ -244,7 +216,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-    	error(1,e.linenum);
+      error();
     this.type = new Type.Int();
     return;
   }
@@ -252,7 +224,6 @@ private void error()
   @Override
   public void visit(True e)
   {
-	 this.type=new Type.Boolean(); 
   }
 
   // statements
@@ -265,38 +236,21 @@ private void error()
     if (type == null)
       type = this.classTable.get(this.currentClass, s.id);
     if (type == null)
-    	error(2,s.linenum);
+      error();
     s.exp.accept(this);
-    //s.type = type;
-    if(!this.type.toString().equals(type.toString()))
-    	error(1,s.linenum);
+    s.type = type;
+    this.type.toString().equals(type.toString());
     return;
   }
 
   @Override
   public void visit(AssignArray s)
   {
-	  Type.T t=this.methodTable.get(s.id);
-	  if(t==null)
-		  t=this.classTable.get(this.currentClass, s.id);
-	  if(t==null)
-		  error(2,s.linenum);
-	  s.index.accept(this);
-	  if(!this.type.toString().equals("@int"))
-		  error(1,s.linenum);
-	  
-	  s.exp.accept(this);
-	  
-		  if(!this.type.toString().equals("@int"))
-			  error(1,s.linenum);
-	  
   }
 
   @Override
   public void visit(Block s)
   {
-	  for(Stm.T t:s.stms)
-		  t.accept(this);
   }
 
   @Override
@@ -304,7 +258,7 @@ private void error()
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-    	error(1,s.linenum);
+      error();
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -315,55 +269,41 @@ private void error()
   {
     s.exp.accept(this);
     if (!this.type.toString().equals("@int"))
-    	error(1,s.linenum);
+      error();
     return;
   }
 
   @Override
   public void visit(While s)
   {
-	  s.condition.accept(this);
-	  if(!this.type.toString().equals("@boolean"))
-		  error(1,s.linenum);
-	  s.body.accept(this);
-	  return;
   }
 
   // type
   @Override
   public void visit(Type.Boolean t)
   {
-	  System.out.println("The Ast is wrong!");
-	  error();
   }
 
   @Override
   public void visit(Type.ClassType t)
   {
-	  System.out.println("The Ast is wrong!");
-	  error();
   }
 
   @Override
   public void visit(Type.Int t)
   {
-	  System.out.println("The Ast is wrong!");
-	  error();
+    System.out.println("aaaa");
   }
 
   @Override
   public void visit(Type.IntArray t)
   {
-	  System.out.println("The Ast is wrong!");
-	  error();
   }
 
   // dec
   @Override
   public void visit(Dec.DecSingle d)
   {
-	  System.out.println("The Ast is wrong!");
-	  error();
   }
 
   // method
@@ -371,29 +311,14 @@ private void error()
   public void visit(Method.MethodSingle m)
   {
     // construct the method table
-	this.methodTable = new  MethodTable();//姣忎竴涓柟娉曟湁涓�寮燤ethodTable锛屽洜涓轰笉鍚屾柟娉�
-											//涓殑鍙橀噺鍙互閲嶅悕
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
       this.methodTable.dump();
 
     for (Stm.T s : m.stms)
-    {
-    	System.out.println("This is the Stm:"+s.linenum );
-    	s.accept(this);
-    	linenum=s.linenum;
-    }
-    ClassBinding cb=this.classTable.get(currentClass);
-    MethodType methodtype=cb.methods.get(m.id);
-    
-     m.retExp.accept(this);
-     if(!methodtype.retType.toString().equals(this.type.toString()))//Why??
-    	 //methodtype.retType==this.type
-     {
-    	 
-    	 error(3,linenum);
-     }
+      s.accept(this);
+    m.retExp.accept(this);
     return;
   }
 
@@ -404,8 +329,6 @@ private void error()
     this.currentClass = c.id;
 
     for (Method.T m : c.methods) {
-    	MethodSingle mm = (MethodSingle) m;
-    	System.out.println("This is the method:  "+ mm.id);
       m.accept(this);
     }
     return;
@@ -418,9 +341,8 @@ private void error()
     this.currentClass = c.id;
     // "main" has an argument "arg" of type "String[]", but
     // one has no chance to use it. So it's safe to skip it...
-    
+
     c.stm.accept(this);
-    
     return;
   }
 
@@ -436,13 +358,10 @@ private void error()
   private void buildClass(ClassSingle c)
   {
     this.classTable.put(c.id, new ClassBinding(c.extendss));
-    //VarDecls
     for (Dec.T dec : c.decs) {
       Dec.DecSingle d = (Dec.DecSingle) dec;
-      this.classTable.put(c.id, d.id, d.type);//鏍规嵁ClassSingle鐨刬d鍘绘壘buildClass锛�
-		  										//鏍规嵁缁撴灉灏哾鐨刬d涓嶵ype鏀惧叆瀵瑰簲ClassBinding鐨刦ield琛ㄤ腑
+      this.classTable.put(c.id, d.id, d.type);
     }
-    //Method
     for (Method.T method : c.methods) {
       MethodSingle m = (MethodSingle) method;
       this.classTable.put(c.id, m.id, new MethodType(m.retType, m.formals));
@@ -473,10 +392,8 @@ private void error()
     // ////////////////////////////////////////////////
     // step 2: elaborate each class in turn, under the class table
     // built above.
-    System.out.println("mainClass....................");
     p.mainClass.accept(this);
     for (Class.T c : p.classes) {
-    	System.out.println("normalClass....................");
       c.accept(this);
     }
 
