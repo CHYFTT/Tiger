@@ -102,6 +102,12 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.ArraySelect e)
   {
+	  e.array.accept(this);
+	  Exp.T array=this.exp;
+	  e.index.accept(this);
+	  Exp.T index=this.exp;
+	  this.exp=new codegen.C.Ast.Exp.ArraySelect(array,index);
+	  return;
   }
 
   @Override
@@ -231,6 +237,11 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.AssignArray s)
   {
+	  s.index.accept(this);
+	  Exp.T index=this.exp;
+	  s.exp.accept(this);
+	  
+	  this.stm=new codegen.C.Ast.Stm.AssignArray(s.id, index, exp);
   }
 
   @Override

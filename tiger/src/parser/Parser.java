@@ -22,6 +22,7 @@ import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.T;
 import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
+import ast.Ast.Exp.ArraySelect;
 import ast.Ast.MainClass.MainClassSingle;
 import ast.Ast.Program.ProgramSingle;
 import ast.Ast.Stm.Assign;
@@ -186,10 +187,11 @@ public class Parser {
 				return new Call(exp,s,args,linenum);
 			} else {
 				//[exp]
+				Exp.T t=(Exp.Id)exp;
 				advance();
 				exp=parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
-				return exp;
+				return new ArraySelect(t,exp,linenum);
 			}
 		}
 		return exp;

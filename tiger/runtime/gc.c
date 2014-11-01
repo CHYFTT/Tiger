@@ -22,9 +22,9 @@ void *Tiger_new (void *vtable, int size)
   // #3: set up the "vptr" pointer to the value of "vtable":
   
   // #4: return the pointer 
-	void* t=(void*)malloc(size);
-	
-	t=vtable
+	char* t=(char*)malloc(size);
+	memset(t,0,size);
+	*((int*)t)=(int*)vtable
 
   
 }
