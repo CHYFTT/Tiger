@@ -22,6 +22,10 @@ void *Tiger_new (void *vtable, int size)
   // #3: set up the "vptr" pointer to the value of "vtable":
   
   // #4: return the pointer 
+	char* t=(char*)malloc(size);
+	memset(t,0,size);
+	*((int*)t)=(int*)vtable
+
   
 }
 
@@ -42,5 +46,8 @@ void *Tiger_new_array (int length)
 {
   // You can use the C "malloc" facilities, as above.
   // Your code here:
+	int *i=(int *)malloc(length);
+	i[0]=length;
+	return i+1;
   
 }

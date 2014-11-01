@@ -209,11 +209,14 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Assign s)
   {
+	
     this.printSpaces();
     this.say(s.id + " = ");
     s.exp.accept(this);
     this.say(";\n");
     return;
+	
+	
   }
 
   @Override

@@ -103,8 +103,10 @@ public class Ast
     // int[]
     public static class IntArray extends T
     {
+    	//String id;
       public IntArray()
       {
+    	  //this.id=id;
       }
 
       @Override
@@ -621,6 +623,10 @@ public class Ast
         this.exp = exp;
         this.type = null;
         this.linenum=0;
+      }
+      public Assign(Type.T type)
+      {
+    	  this.type=type;
       }
 
       @Override

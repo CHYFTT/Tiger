@@ -157,6 +157,8 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.Ast.Exp.NewIntArray e)
   {
 	  e.exp.accept(this);
+	  Exp.T t=this.exp;
+	  this.exp=new codegen.C.Ast.Exp.NewIntArray(t);
   }
 
   @Override

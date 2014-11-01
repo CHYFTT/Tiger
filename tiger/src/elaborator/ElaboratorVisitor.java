@@ -88,8 +88,8 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);								//涓嶅尮閰�
-	  if(!t.toString().equals("@int"))			//绫诲瀷涓嶅
+		  error(1,e.linenum);								
+	  if(!t.toString().equals("@int"))			
 		  error(1,e.linenum);
 	  return;
 	  
