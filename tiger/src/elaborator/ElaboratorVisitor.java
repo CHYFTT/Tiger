@@ -62,15 +62,17 @@ private void error()
   {
 	  switch(c){
 	  case 1:
-		  System.out.println("error:type mismatch at line "+linenum);
+		  System.err.println("error:type mismatch at line "+linenum);
+		  System.err.println("need type:"+type.toString());
 		  System.exit(1);
 		  break;
 	  case 2:
-		  System.out.println("error:un decl var at line "+linenum);
+		  System.err.println("error:un decl var at line "+linenum);
 		  System.exit(1);
 		  break;
 	  case 3:
-		  System.out.println("error:return val mis at line "+linenum);
+		  System.err.println("error:return val mis at line "+linenum);
+		  System.err.println("return type must be "+type.toString());
 		  System.exit(1);
 	  }
 	  

@@ -573,13 +573,13 @@ public class Ast
 
     public static class MethodSingle extends T
     {
-      public Type.T retType;
-      public String classId;
-      public String id;
-      public LinkedList<Dec.T> formals;
-      public LinkedList<Dec.T> locals;
-      public LinkedList<Stm.T> stms;
-      public Exp.T retExp;
+      public Type.T retType;//声明时的返回类型
+      public String classId;//所属类的id
+      public String id;//方法名
+      public LinkedList<Dec.T> formals;//参数列表
+      public LinkedList<Dec.T> locals;//声明
+      public LinkedList<Stm.T> stms;//语句
+      public Exp.T retExp;//return的返回类型
 
       public MethodSingle(Type.T retType, String classId, String id,
           LinkedList<Dec.T> formals, LinkedList<Dec.T> locals,

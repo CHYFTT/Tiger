@@ -1,5 +1,6 @@
 package codegen.C;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import ast.Ast.Type.T;
@@ -36,19 +37,23 @@ import codegen.C.Ast.Vtable.VtableSingle;
 
 public class TranslateVisitor implements ast.Visitor
 {
-  private ClassTable table;
+  private ClassTable table;//整个的trans过程用ClassTable做辅助
   private String classId;
   private Type.T type; // type after translation
   private Dec.T dec;
   private Stm.T stm;
-  private Exp.T exp;
+  private Exp.T exp;//每当XXX.XXX.accept(this)执行后，以上几个变量会改变(this.exp=new XX)
   private Method.T method;//临时存放生成的Method obj
   private LinkedList<Dec.T> tmpVars;//!!!在Call中会用到。
   									//如果调用了方法，就要把对应的类先声明
-  private LinkedList<Class.T> classes;
-  private LinkedList<Vtable.T> vtables;//存放所有的方法
-  private LinkedList<Method.T> methods;
+  
+  
+  private LinkedList<Class.T> classes;//
+  private LinkedList<Vtable.T> vtables;//虚函数表，存放所有的方法
+  private LinkedList<Method.T> methods;//
   private MainMethod.T mainMethod;//main对象
+  
+  
   public Program.T program;
 
   public TranslateVisitor()
@@ -336,17 +341,18 @@ public class TranslateVisitor implements ast.Visitor
   {
     this.tmpVars = new LinkedList<Dec.T>();
     m.retType.accept(this);
-    Type.T newRetType = this.type;
-    LinkedList<Dec.T> newFormals = new LinkedList<Dec.T>();//参数列表声明
+    Type.T newRetType = this.type;//构造新的返回值对象
+    LinkedList<Dec.T> newFormals = new LinkedList<Dec.T>();//构造新的参数列表声明
     
     newFormals.add(new Dec.DecSingle(
         new ClassType(this.classId), "this")); //先在参数列表加入一个指向自己类的指针
     
-    for (ast.Ast.Dec.T d : m.formals) {
+    for (ast.Ast.Dec.T d : m.formals) {//遍历java的ast的这个方法的参数列表，
+    									//将翻译过后的对象添加到新的参数列表对象里
       d.accept(this);
       newFormals.add(this.dec);
     }
-    LinkedList<Dec.T> locals = new LinkedList<Dec.T>();//局部变量声明
+    LinkedList<Dec.T> locals = new LinkedList<Dec.T>();//构造新的局部变量声明列表
     for (ast.Ast.Dec.T d : m.locals) {
       d.accept(this);
       locals.add(this.dec);
@@ -371,8 +377,10 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Class.ClassSingle c)
   {
-    ClassBinding cb = this.table.get(c.id);
+    ClassBinding cb = this.table.get(c.id);//根据class表查询classbinding对象
+    //得到对应classTable里面classbinding对象的LinkedList<Tuple> fields
     this.classes.add(new ClassSingle(c.id, cb.fields));
+    //得到ArrayList<Ftuple> methods
     this.vtables.add(new VtableSingle(c.id, cb.methods));
     this.classId = c.id;
     for (ast.Ast.Method.T m : c.methods) {
@@ -412,35 +420,38 @@ public class TranslateVisitor implements ast.Visitor
 
   public void scanClasses(java.util.LinkedList<ast.Ast.Class.T> cs)
   {
-    // put empty chuncks into the table
+    // put empty chuncks into the table-----
+	  //现初始化classTable，只填入extends信息。
     for (ast.Ast.Class.T c : cs) {
       ast.Ast.Class.ClassSingle cc = (ast.Ast.Class.ClassSingle) c;
       this.table.init(cc.id, cc.extendss);
     }
 
-    // put class fields and methods into the table
+    // put class fields and methods into the table-----
+    //再次遍历java的class表
     for (ast.Ast.Class.T c : cs) {
       ast.Ast.Class.ClassSingle cc = (ast.Ast.Class.ClassSingle) c;
-      LinkedList<Dec.T> newDecs = new LinkedList<Dec.T>();
+      LinkedList<Dec.T> newDecs = new LinkedList<Dec.T>();//声明一个新的声明链表
       for (ast.Ast.Dec.T dec : cc.decs) {
         dec.accept(this);
         newDecs.add(this.dec);//在dec.accept(this)执行后，this.dec变为了一个C类型的Dec
       }
-      this.table.initDecs(cc.id, newDecs);
+      this.table.initDecs(cc.id, newDecs);//将新的声明放入classbinding对象中
 
       // all methods
       java.util.LinkedList<ast.Ast.Method.T> methods = cc.methods;
       for (ast.Ast.Method.T mthd : methods) {
         ast.Ast.Method.MethodSingle m = (ast.Ast.Method.MethodSingle) mthd;
-        LinkedList<Dec.T> newArgs = new LinkedList<Dec.T>();
+        LinkedList<Dec.T> newArgs = new LinkedList<Dec.T>();//声明一个新的参数列表
         for (ast.Ast.Dec.T arg : m.formals) {
           arg.accept(this);
           newArgs.add(this.dec);//同上
         }
         m.retType.accept(this);
         Type.T newRet = this.type;
-        this.table.initMethod(cc.id, newRet, newArgs, m.id);
+        this.table.initMethod(cc.id, newRet, newArgs, m.id);//将新的方法放入classbinding对象中
       }
+      //通过上面的代码，整个的C的Class已经构造完成。classbinding对象里面的信息都已经填充。
     }
 
     // calculate all inheritance information

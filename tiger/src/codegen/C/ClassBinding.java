@@ -17,19 +17,23 @@ public class ClassBinding
   {
     this.extendss = extendss;
     this.visited = false;
-    this.fields = new LinkedList<Tuple>();
-    this.methods = new ArrayList<Ftuple>();
+    this.fields = new LinkedList<Tuple>();//参数
+    this.methods = new ArrayList<Ftuple>();//方法
   }
 
   // put a single field
   public void put(String c, Type.T type, String var)
   {
-    this.fields.add(new Tuple(c, type, var));
+    this.fields.add(new Tuple(c, type, var));//
+    /*
+     * Tuple tu=new Tuple(c,type,car);
+     * this.fields.put(tu);
+     */
   }
 
   public void put(Tuple t)
   {
-    this.fields.add(t);
+    this.fields.add(t);//上面不改这里就有点多余
   }
 
   public void update(java.util.LinkedList<Tuple> fs)

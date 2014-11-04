@@ -66,14 +66,14 @@ public class Parser {
 		if (kind == current.kind) {
 			advance();
 		} else {
-			System.out.println("Expects: " + kind.toString());
-			System.out.println("But got: " + current.kind.toString());
+			System.err.println("Expects: " + kind.toString());
+			System.err.println("But got: " + current.kind.toString());
 			System.exit(1);
 		}
 	}
 
 	private void error() {
-		System.out.println("Syntax error: compilation aborting...at line:\n"+linenum);
+		System.err.println("Syntax error: compilation aborting...at line:\n"+linenum);
 		System.exit(1);
 		return;
 	}
@@ -239,9 +239,17 @@ public class Parser {
 		Exp.T left,right=null;
 		left=parseAddSubExp();
 		while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
+			if(current.kind==Kind.TOKEN_ADD){
 			advance();
 			right=parseAddSubExp();
 			return new Exp.Add(left, right,linenum);
+			}
+			else
+			{
+				advance();
+				right=parseAddSubExp();
+				return new Exp.Sub(left, right,linenum);
+			}
 		}
 		return left;
 	}
