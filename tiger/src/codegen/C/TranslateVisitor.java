@@ -186,7 +186,8 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.Ast.Exp.Not e)
   {
 	  e.exp.accept(this);
-	  this.type=new Type.Int();
+	  Exp.T t=this.exp;
+	  this.exp=new codegen.C.Ast.Exp.Not(t);
   }
 
   @Override
@@ -432,26 +433,31 @@ public class TranslateVisitor implements ast.Visitor
     for (ast.Ast.Class.T c : cs) {
       ast.Ast.Class.ClassSingle cc = (ast.Ast.Class.ClassSingle) c;
       LinkedList<Dec.T> newDecs = new LinkedList<Dec.T>();//声明一个新的声明链表
+      
       for (ast.Ast.Dec.T dec : cc.decs) {
         dec.accept(this);
         newDecs.add(this.dec);//在dec.accept(this)执行后，this.dec变为了一个C类型的Dec
       }
-      this.table.initDecs(cc.id, newDecs);//将新的声明放入classbinding对象中
+      this.table.initDecs(cc.id, newDecs);//将新的声明放入ClassBinding对象中
 
       // all methods
       java.util.LinkedList<ast.Ast.Method.T> methods = cc.methods;
       for (ast.Ast.Method.T mthd : methods) {
         ast.Ast.Method.MethodSingle m = (ast.Ast.Method.MethodSingle) mthd;
         LinkedList<Dec.T> newArgs = new LinkedList<Dec.T>();//声明一个新的参数列表
-        for (ast.Ast.Dec.T arg : m.formals) {
+        
+        newArgs.add(new Dec.DecSingle(
+                new ClassType(cc.id), "this"));//重点！！也是放了一个自己所在类的类型
+        									//这样classTable中对应ClassBinding对象的
+        for (ast.Ast.Dec.T arg : m.formals) {//Ftuple的参数列表也会多一项
           arg.accept(this);
           newArgs.add(this.dec);//同上
         }
         m.retType.accept(this);
         Type.T newRet = this.type;
-        this.table.initMethod(cc.id, newRet, newArgs, m.id);//将新的方法放入classbinding对象中
-      }
-      //通过上面的代码，整个的C的Class已经构造完成。classbinding对象里面的信息都已经填充。
+        this.table.initMethod(cc.id, newRet, newArgs, m.id);//将新的方法放入
+      }														//ClassBinding对象中
+      //通过上面的代码，整个的C的Class已经构造完成。ClassBinding对象里面的信息都已经填充。
     }
 
     // calculate all inheritance information

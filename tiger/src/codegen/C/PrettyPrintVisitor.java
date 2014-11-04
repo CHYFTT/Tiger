@@ -339,6 +339,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(DecSingle d)
   {
+	  d.type.accept(this);
+	  this.say("");
   }
 
   // method
@@ -357,9 +359,11 @@ public class PrettyPrintVisitor implements Visitor
         this.say(", ");
     }
     this.sayln(")");
-    this.sayln("{");
-
-    for (Dec.T d : m.locals) {//局部变量声明
+    
+    
+    
+    this.sayln("{");//局部变量声明
+    for (Dec.T d : m.locals) {
       DecSingle dec = (DecSingle) d;
       this.say("  ");
       dec.type.accept(this);//类型
@@ -404,8 +408,22 @@ public class PrettyPrintVisitor implements Visitor
     for (codegen.C.Ftuple t : v.ms) {
       this.say("  ");
       t.ret.accept(this);//方法的返回值
-      this.sayln(" (*" + t.id + ")();");//方法名
+      this.say(" (*" + t.id + ")(");//方法名+参数
+      int size=t.args.size();
+      
+      for(Dec.T d:t.args)
+      {
+    	  DecSingle dd=(DecSingle)d;
+    	  dd.type.accept(this);
+    	  this.say(" " + dd.id);
+    	  size--;
+    	  if(size>0)
+    		  this.say(",");
+      }
+      
+      this.sayln(");");
     }
+    
     this.sayln("};\n");
     return;
   }
@@ -470,24 +488,53 @@ public class PrettyPrintVisitor implements Visitor
     }
 
     this.sayln("// vtables structures");
-    for (Vtable.T v : p.vtables) {//处理方法声明
-      v.accept(this);
-    }
+    for (Vtable.T v : p.vtables) {//虚函数表，里面放有函数指针.注意！！！函数指针需要带参数。
+      v.accept(this);				//这里为了可以打印函数指针的参数，对classTable的初始化
+    }								//进行了修改，在Ftuple
     this.sayln("");
-
-    this.sayln("// methods");
-    for (Method.T m : p.methods) {//处理方法
-      m.accept(this);
+    
+    
+    this.sayln("//methods decl");//方法声明
+    for(Method.T mm:p.methods)
+    {
+    	MethodSingle m=(MethodSingle)mm;
+    	m.retType.accept(this);//处理返回值
+        this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
+        int size = m.formals.size();
+        for (Dec.T d : m.formals) {//参数列表
+          DecSingle dec = (DecSingle) d;
+          size--;
+          dec.type.accept(this);//声明的类型， int num_aux;
+          this.say(" " + dec.id);//声明的ID
+          if (size > 0)
+            this.say(", ");
+        }
+        this.sayln(");");
     }
-    this.sayln("");
-
-    this.sayln("// vtables");//？？？？？？？？？？
+    
+    
+    this.sayln("// vtables");//虛函数表初始化-----在初始化之前必须先声明方法
     for (Vtable.T v : p.vtables) {
       outputVtable((VtableSingle) v);
     }
     this.sayln("");
+    
+    
 
-    this.sayln("// main method");
+    this.sayln("// methods");
+    for (Method.T m : p.methods) {//方法的定义------在方法定义以前，就应该初始化虚函数表
+    							//但是，虚函数表的初始化又需要方法名，所以在方法定义之前，
+    							//应该先声明方法
+      m.accept(this);
+    }
+    this.sayln("");
+    
+
+   
+    
+    
+
+    this.sayln("// main method");//处理main函数
     p.mainMethod.accept(this);
     this.sayln("");
 
