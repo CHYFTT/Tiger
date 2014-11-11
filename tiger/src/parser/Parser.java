@@ -41,6 +41,7 @@ public class Parser {
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
+	boolean isField=true;//为了将声明分类，区别class与method的声明，在bytecode中会用到
 	int linenum=1;
 	Type.T currentType=null;
 	
@@ -478,7 +479,7 @@ public class Parser {
 
 		Type.T type=parseType();// reference to the return Exp
 		id=current.lexeme;
-		dec=new DecSingle(type,id);
+		dec=new DecSingle(type,id,isField);
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_SEMI);
 		return dec;
@@ -488,7 +489,7 @@ public class Parser {
 			Type.T type=new Type.ClassType(current.lexeme);
 			current=currentNext;
 			id=current.lexeme;
-			dec=new DecSingle(type,id);
+			dec=new DecSingle(type,id,isField);
 			eatToken(Kind.TOKEN_ID);
 			eatToken(Kind.TOKEN_SEMI);
 			isSpecial=false;
@@ -562,13 +563,13 @@ public class Parser {
 			type=parseType();
 			id=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
-			formals.add(new DecSingle(type,id));
+			formals.add(new DecSingle(type,id,isField));
 			while (current.kind == Kind.TOKEN_COMMER) {
 				advance();
 				type=parseType();
 				id=current.lexeme;
 				eatToken(Kind.TOKEN_ID);
-				formals.add(new DecSingle(type,id));
+				formals.add(new DecSingle(type,id,isField));
 			}
 		}
 		return formals;
@@ -614,8 +615,10 @@ public class Parser {
 	private LinkedList<Method.T> parseMethodDecls() {
 		LinkedList<Method.T> methods=new LinkedList<ast.Ast.Method.T>();
 		while (current.kind == Kind.TOKEN_PUBLIC) {
+			isField=false;
 			methods.add(parseMethod());
 		}
+		isField=true;
 		return methods;
 	}
 

@@ -16,7 +16,7 @@ public class Ast
       // int[]: 1
       // class: 2
       // Such that one can easily tell who is who
-      public abstract int getNum();
+      public abstract int getNum();//抽象方法，只能定义在抽象类当中！！
     }
 
     // boolean
@@ -33,7 +33,7 @@ public class Ast
       }
 
       @Override
-      public int getNum()
+      public int getNum()//子类必须实现父类的抽象方法
       {
         return -1;
       }
@@ -142,11 +142,13 @@ public class Ast
     {
       public Type.T type;
       public String id;
+      public boolean isField;
 
-      public DecSingle(Type.T type, String id)
+      public DecSingle(Type.T type, String id,boolean isField)
       {
         this.type = type;
         this.id = id;
+        this.isField=isField;
       }
 
       @Override
@@ -310,7 +312,7 @@ public class Ast
     public static class Id extends T
     {
       public String id; // name of the id
-      public Type.T type; // type of the id
+      public Type.T type; // type of the id,type与isField在elab时会给赋值！！
       public boolean isField; // whether or not this is a class field
 
       public Id(String id,int linenum)
@@ -341,6 +343,13 @@ public class Ast
         this.type = type;
         this.isField = isField;
         this.linenum=0;
+      }
+      public Id(String id,boolean isField)
+      {
+    	  this.id=id;
+    	  this.isField=isField;
+    	  this.linenum=0;
+    	  
       }
 
       @Override
@@ -608,8 +617,8 @@ public class Ast
     {
       public String id;
       public Exp.T exp;
-      public Type.T type; // type of the id
-      public boolean isField;
+      public Type.T type; // type of the id,在elab时会赋值
+      public boolean isField;//在elab时会赋值
     
       public Assign(String id, Exp.T exp,int linenum)
       {
@@ -627,10 +636,10 @@ public class Ast
         isField=false;
         this.linenum=0;
       }
-      public Assign(Type.T type)
-      {
-    	  this.type=type;
-      }
+//      public Assign(Type.T type)
+//      {
+//    	  this.type=type;
+//      }
 
       @Override
       public void accept(ast.Visitor v)
@@ -645,6 +654,7 @@ public class Ast
       public String id;
       public Exp.T index;
       public Exp.T exp;
+      public Type.T tyep;//type of the id
       public boolean isField;
       
 

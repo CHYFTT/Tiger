@@ -50,9 +50,9 @@ public class Fac
       new util.Flist<Dec.T>().list(),
       new util.Flist<Method.T>().list(new Method.MethodSingle(
           new Type.Int(), "ComputeFac", new util.Flist<Dec.T>()
-              .list(new Dec.DecSingle(new Type.Int(), "num")),
+              .list(new Dec.DecSingle(new Type.Int(), "num",false)),
           new util.Flist<Dec.T>().list(new Dec.DecSingle(
-              new Type.Int(), "num_aux")), new util.Flist<Stm.T>()
+              new Type.Int(), "num_aux",false)), new util.Flist<Stm.T>()
               .list(new If(new Lt(new Id("num"),
                   new Num(1,1)), new Assign("num_aux",
                   new Num(1,1)), new Assign("num_aux",
@@ -82,10 +82,10 @@ public class Fac
 	      new util.Flist<Dec.T>().list(),
 	      new util.Flist<Method.T>().list(new Method.MethodSingle(
 	          new Type.Int(), "doit", new util.Flist<Dec.T>()
-	              .list(new Dec.DecSingle(new Type.Int(), "n")),
+	              .list(new Dec.DecSingle(new Type.Int(), "n",false)),
 	          new util.Flist<Dec.T>().list(new Dec.DecSingle(
-	              new Type.Int(), "sum"),new Dec.DecSingle(
-	    	              new Type.Int(), "i")), 
+	              new Type.Int(), "sum",false),new Dec.DecSingle(
+	    	              new Type.Int(), "i",false)), 
 	    	              new util.Flist<Stm.T>().list(new Assign("i",new Num(0,1),1), 
 	    	            		  new Assign("sum",new Exp.False(1),1),
 	    	            		  new Assign("sum",new Num(0,1),1),

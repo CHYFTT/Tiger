@@ -177,7 +177,7 @@ private void error()
       error(2,e.linenum);
     this.type = type;
     // record this type on this node for future use.
-    e.type = type;
+    e.type = type;//给这个id加上类型。
     return;
   }
 
@@ -284,6 +284,7 @@ private void error()
     if (type == null)
     	error(2,s.linenum);
     //s.isField=true;
+    s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
     					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
     //System.out.println(s.exp.getClass().getName());
@@ -312,6 +313,7 @@ private void error()
 	  }
 	  if(type==null)
 		  error(2,s.linenum);
+	  s.tyep=type;
 	  //判断索引号
 	 // System.out.println(type.toString());// ---------------------------------------
 	  s.index.accept(this);

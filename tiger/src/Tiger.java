@@ -132,11 +132,13 @@ public class Tiger
     // code generation
     switch (control.Control.ConCodeGen.codegen) {
     case Bytecode:
+      System.out.println("start generate Bytecode....");
       codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
       theAst.accept(trans);
       codegen.bytecode.Ast.Program.T bytecodeAst = trans.program;
       codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
       bytecodeAst.accept(ppbc);
+      System.out.println("Bytecode finished....");
       break;
     case C:
     	System.out.println("start....");
