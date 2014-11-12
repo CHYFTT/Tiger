@@ -633,8 +633,9 @@ public class Parser {
 		id=current.lexeme;
 		eatToken(Kind.TOKEN_ID);
 		if (current.kind == Kind.TOKEN_EXTENDS) {
-			extendss="extends";
+			
 			eatToken(Kind.TOKEN_EXTENDS);
+			extendss=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
 		}
 		eatToken(Kind.TOKEN_LBRACE);

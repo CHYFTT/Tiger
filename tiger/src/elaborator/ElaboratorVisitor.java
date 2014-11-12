@@ -134,20 +134,33 @@ private void error()
       e.type = ty.id;
     } else
       error(1,e.linenum);
-    MethodType mty = this.classTable.getm(ty.id, e.id);
+    MethodType mty = this.classTable.getm(ty.id, e.id);//在Tree里面找accept
+    //收集call的所有参数的Type
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
     for (Exp.T a : e.args) {
       a.accept(this);
       argsty.addLast(this.type);
     }
+    //验证方法的参数个数是否匹配
     if (mty.argsType.size() != argsty.size())
       error(1,e.linenum);
+    //验证方法的参数类型是否匹配
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
-        ;
+    	  ;
       else
-        error(1,e.linenum);
+      {
+    	  String maybesub=argsty.get(i).toString();
+    	  ClassBinding cbb=this.classTable.get(maybesub);
+    	  if(dec.type.toString().equals(cbb.extendss))
+    	  {
+    		  ;
+    	  }
+    	  else
+    		  error(1,e.linenum);
+      }
+        
     }
     this.type = mty.retType;
     e.at = argsty;
@@ -287,13 +300,13 @@ private void error()
     s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
     					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
-    //System.out.println(s.exp.getClass().getName());
     if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
     {
+    	//type代表左边，this.type代表右边
     	if(!this.type.toString().equals(type.toString()))
     		error(1,s.linenum);
     }
-    else
+    else//如果=右边是ArraySelect类型，那左边只能是int型。
     {
     	if(!type.toString().equals("@int"))
     		error(1,s.linenum);

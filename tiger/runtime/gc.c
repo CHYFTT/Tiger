@@ -24,7 +24,7 @@ void *Tiger_new (void *vtable, int size)
   // #4: return the pointer 
 	char* t=(char*)malloc(size);
 	memset(t,0,size);
-	*((int*)t)=(int*)vtable
+	*((int*)t)=(int*)vtable;
 	return t;
 
   

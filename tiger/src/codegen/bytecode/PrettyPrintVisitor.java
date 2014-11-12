@@ -260,14 +260,15 @@ public class PrettyPrintVisitor implements Visitor
     this.say(".method public " + m.id + "(");
     for (Dec.T d : m.formals) {
       DecSingle dd = (DecSingle) d;
-      dd.type.accept(this);
+      dd.type.accept(this);//参数列表的类型
     }
     this.say(")");
-    m.retType.accept(this);
+    m.retType.accept(this);//方法返回值类型
     this.sayln("");
     this.sayln(".limit stack 4096");
     this.sayln(".limit locals " + (m.index + 1));
 
+    //方法内部的声明不需要打印，在indexTable里面隐含了声明。
     for (Stm.T s : m.stms)
       s.accept(this);
 
@@ -282,7 +283,7 @@ public class PrettyPrintVisitor implements Visitor
     // Every class must go into its own class file.
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
-          new java.io.FileOutputStream(c.id + ".j")));
+          new java.io.FileOutputStream("test\\"+c.id + ".j")));
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
@@ -298,7 +299,7 @@ public class PrettyPrintVisitor implements Visitor
     else
       this.sayln(".super " + c.extendss);
 
-    // fields
+    // fields打印Class里面的声明。
     for (Dec.T d : c.decs) {
       DecSingle dd = (DecSingle) d;
       this.say(".field public " + dd.id+" ");
@@ -336,7 +337,7 @@ public class PrettyPrintVisitor implements Visitor
     // Every class must go into its own class file.
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
-          new java.io.FileOutputStream(c.id + ".j")));
+          new java.io.FileOutputStream("test\\"+c.id + ".j")));
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);

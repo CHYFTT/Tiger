@@ -844,7 +844,7 @@ public class Ast
           java.util.LinkedList<ast.Ast.Method.T> methods)
       {
         this.id = id;
-        this.extendss = extendss;
+        this.extendss = extendss;//何时添加？？在Parse中已经添加了
         this.decs = decs;
         this.methods = methods;
       }

@@ -5,6 +5,8 @@ class Sum {
 }
 
 class Doit {
+	int k;
+	int p;
     public int doit(int n) {
         int sum;
         int i;
