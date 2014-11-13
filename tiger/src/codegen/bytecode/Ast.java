@@ -343,7 +343,7 @@ public static class Getfield extends T
     {
       public String f;
       public String c;
-      public LinkedList<Type.T> at;//参数列表
+      public LinkedList<Type.T> at;//参数列表，这个列表里面应该放父类的类型
       public Type.T rt;//返回类型
 
       public Invokevirtual(String f, String c, LinkedList<Type.T> at, Type.T rt)

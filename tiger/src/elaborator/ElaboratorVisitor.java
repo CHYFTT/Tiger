@@ -54,23 +54,29 @@ public class ElaboratorVisitor implements ast.Visitor
     this.type = null;
     
   }
+  public enum Error
+  {
+	MISTYPE,
+	UNDECL,
+	RET;
+  }
 private void error()
 {
 	System.exit(1);
 }
-  private void error(int c,int linenum)
+  private void error(Error c,int linenum)
   {
 	  switch(c){
-	  case 1:
+	  case MISTYPE:
 		  System.err.println("error:type mismatch at line "+linenum);
 		  System.err.println("need type:"+type.toString());
 		  System.exit(1);
 		  break;
-	  case 2:
+	  case UNDECL:
 		  System.err.println("error:un decl var at line "+linenum);
 		  System.exit(1);
 		  break;
-	  case 3:
+	  case RET:
 		  System.err.println("error:return val mis at line "+linenum);
 		  System.err.println("return type must be "+type.toString());
 		  System.exit(1);
@@ -90,9 +96,9 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);								
+		  error(Error.MISTYPE,e.linenum);								
 	  if(!t.toString().equals("@int"))			
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
 	  return;
 	  
   }
@@ -104,7 +110,7 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
 	  return;
   }
 
@@ -114,7 +120,7 @@ private void error()
 	  
 	  e.index.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
 	  e.array.accept(this);
 	  //System.out.println(this.type.toString());
 	  
@@ -131,9 +137,9 @@ private void error()
     leftty = this.type;
     if (leftty instanceof ClassType) {
       ty = (ClassType) leftty;
-      e.type = ty.id;
+      e.type = ty.id;//将调用者的id记录
     } else
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     MethodType mty = this.classTable.getm(ty.id, e.id);//在Tree里面找accept
     //收集call的所有参数的Type
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
@@ -143,22 +149,32 @@ private void error()
     }
     //验证方法的参数个数是否匹配
     if (mty.argsType.size() != argsty.size())
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     //验证方法的参数类型是否匹配
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
-    	  ;
+    	  ;//如果相等
       else
-      {
-    	  String maybesub=argsty.get(i).toString();
-    	  ClassBinding cbb=this.classTable.get(maybesub);
-    	  if(dec.type.toString().equals(cbb.extendss))
+      {//不相等时还可能可父类型匹配
+    	  /*
+    	   * 此时要比较的两个type必须是ClassType的实例。
+    	   * 因为Classbinding对象里面记录的extenss，通过classTable查看是否有父类
+    	   * 当确实存在父类时，直接用父类型替换Call对象的参数类型列表
+    	   */
+    	  if(dec.type instanceof ClassType&&
+    			  argsty.get(i) instanceof ClassType)
     	  {
-    		  ;
+    		  String maybesub=argsty.get(i).toString();
+    		  ClassBinding cbb=this.classTable.get(maybesub);
+    		  if(dec.type.toString().equals(cbb.extendss))
+    		  {
+    			  Type.ClassType tc=new Type.ClassType(cbb.extendss);
+    			  argsty.set(i, tc);
+    		  }
+    		  else
+    		 	error(Error.MISTYPE,e.linenum);
     	  }
-    	  else
-    		  error(1,e.linenum);
       }
         
     }
@@ -187,7 +203,7 @@ private void error()
       e.isField = true;
     }
     if (type == null)
-      error(2,e.linenum);
+      error(Error.UNDECL,e.linenum);
     this.type = type;
     // record this type on this node for future use.
     e.type = type;//给这个id加上类型。
@@ -210,7 +226,7 @@ private void error()
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     this.type = new Type.Boolean();
     return;
   }
@@ -220,7 +236,7 @@ private void error()
   {
 	  e.exp.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
 	  this.type=new Type.IntArray();
   }
 
@@ -252,7 +268,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -271,7 +287,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-    	error(1,e.linenum);
+    	error(Error.MISTYPE,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -295,7 +311,7 @@ private void error()
       s.isField=true;
     }
     if (type == null)
-    	error(2,s.linenum);
+    	error(Error.UNDECL,s.linenum);
     //s.isField=true;
     s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
@@ -304,12 +320,12 @@ private void error()
     {
     	//type代表左边，this.type代表右边
     	if(!this.type.toString().equals(type.toString()))
-    		error(1,s.linenum);
+    		error(Error.MISTYPE,s.linenum);
     }
     else//如果=右边是ArraySelect类型，那左边只能是int型。
     {
     	if(!type.toString().equals("@int"))
-    		error(1,s.linenum);
+    		error(Error.MISTYPE,s.linenum);
     }
     return;
   }
@@ -325,13 +341,13 @@ private void error()
 		  s.isField=true;
 	  }
 	  if(type==null)
-		  error(2,s.linenum);
+		  error(Error.UNDECL,s.linenum);
 	  s.tyep=type;
 	  //判断索引号
 	 // System.out.println(type.toString());// ---------------------------------------
 	  s.index.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error(1,s.linenum);
+		  error(Error.UNDECL,s.linenum);
 	  //System.out.println("index finished.................");
 	  //判断id类型
 	  s.exp.accept(this);
@@ -339,12 +355,12 @@ private void error()
 	  if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
 	  {
 		  if(!this.type.toString().equals("@int"))
-			  error(1,s.linenum);
+			  error(Error.MISTYPE,s.linenum);
 	  }
 	  else
 	  {
 		  if(!type.toString().equals("@int[]"))
-			  error(1,s.linenum);
+			  error(Error.MISTYPE,s.linenum);
 		  
 	  }
 	  
@@ -362,7 +378,7 @@ private void error()
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-    	error(1,s.linenum);
+    	error(Error.MISTYPE,s.linenum);
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -375,12 +391,12 @@ private void error()
     if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
     {
     	if (!this.type.toString().equals("@int"))
-    		error(1,s.linenum);
+    		error(Error.MISTYPE,s.linenum);
     }
     else
     {
     	if (!this.type.toString().equals("@int[]"))
-    		error(1,s.linenum);
+    		error(Error.MISTYPE,s.linenum);
     }
     return;
   }
@@ -390,7 +406,7 @@ private void error()
   {
 	  s.condition.accept(this);
 	  if(!this.type.toString().equals("@boolean"))
-		  error(1,s.linenum);
+		  error(Error.MISTYPE,s.linenum);
 	  s.body.accept(this);
 	  return;
   }
@@ -457,7 +473,7 @@ private void error()
     	 //methodtype.retType==this.type
      {
     	 
-    	 error(3,linenum);
+    	 error(Error.RET,linenum);
      }
     return;
   }

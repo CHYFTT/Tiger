@@ -98,6 +98,7 @@ public class TranslateVisitor implements ast.Visitor
     }
     e.rt.accept(this);
     Type.T rt = this.type;
+    //参数的类型列表
     LinkedList<Type.T> at = new LinkedList<Type.T>();
     for (ast.Ast.Type.T t : e.at) {
       t.accept(this);

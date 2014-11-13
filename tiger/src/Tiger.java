@@ -48,10 +48,12 @@ public class Tiger
       switch (control.Control.ConCodeGen.codegen) {
       case Bytecode:
         System.out.println("bytecode codegen");
-        codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
+        codegen.bytecode.TranslateVisitor trans = 
+        		new codegen.bytecode.TranslateVisitor();
         ast.Fac.prog.accept(trans);
         codegen.bytecode.Ast.Program.T bytecodeAst = trans.program;
-        codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+        codegen.bytecode.PrettyPrintVisitor ppbc =
+        		new codegen.bytecode.PrettyPrintVisitor();
         bytecodeAst.accept(ppbc);
         break;
       case C:
@@ -136,20 +138,25 @@ public class Tiger
     switch (control.Control.ConCodeGen.codegen) {
     case Bytecode:
       System.out.println("Start generate Bytecode....");
-      codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
+      codegen.bytecode.TranslateVisitor trans =
+    		  new codegen.bytecode.TranslateVisitor();
       theAst.accept(trans);
-      codegen.bytecode.Ast.Program.ProgramSingle bytecodeAst =(codegen.bytecode.Ast.Program.ProgramSingle) trans.program;
-      codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+      codegen.bytecode.Ast.Program.ProgramSingle bytecodeAst =
+    		  (codegen.bytecode.Ast.Program.ProgramSingle) trans.program;
+      codegen.bytecode.PrettyPrintVisitor ppbc = 
+    		  new codegen.bytecode.PrettyPrintVisitor();
       bytecodeAst.accept(ppbc);
       System.out.println("Bytecode finished....");
       
       System.out.println("Jasmin start...");
-      codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
+      codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = 
+    		  (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
       String command2="java -jar jasmin.jar test\\"+mainClass.id+".j";
       String err2=null;
 		try {
 			Process pro2=Runtime.getRuntime().exec(command2);
-			BufferedReader br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+			BufferedReader br=new BufferedReader(
+					new InputStreamReader(pro2.getErrorStream()));
 			while((err2=br.readLine())!=null)
 			{
 				System.out.println(err2);
@@ -157,7 +164,8 @@ public class Tiger
 			
 			for(codegen.bytecode.Ast.Class.T c:bytecodeAst.classes)
 		      {
-				codegen.bytecode.Ast.Class.ClassSingle cs=(codegen.bytecode.Ast.Class.ClassSingle)c;
+				codegen.bytecode.Ast.Class.ClassSingle cs=
+						(codegen.bytecode.Ast.Class.ClassSingle)c;
 		    	command2="java -jar jasmin.jar test\\"+cs.id+".j";
 		    	pro2=Runtime.getRuntime().exec(command2);
 		    	br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
@@ -175,6 +183,11 @@ public class Tiger
 			while((err2=br.readLine())!=null)
 			{
 				System.out.println(err2);
+			}
+			br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+			while((err2=br.readLine())!=null)
+			{
+				System.err.println(err2);
 			}
 			System.out.println("Execute finished...");
 		} catch (IOException e1) {
