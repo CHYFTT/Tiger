@@ -114,6 +114,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Call e)
   {
+	  /*
+	   * 在这里面与jasmin不同的是，C语言的调用不需要输出调用函数的参数
+	   */
     this.say("(" + e.assign + "=");
     e.exp.accept(this);
     this.say(", ");

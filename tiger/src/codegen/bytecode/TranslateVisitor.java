@@ -18,6 +18,8 @@ import codegen.bytecode.Ast.Stm;
 import codegen.bytecode.Ast.Type;
 import codegen.bytecode.Ast.Type.Int;
 import codegen.bytecode.Ast.Stm.*;
+import elaborator.ElaboratorVisitor;
+import elaborator.MethodType;
 import util.Label;
 
 // Given a Java ast, translate it into Java bytecode.
@@ -100,6 +102,7 @@ public class TranslateVisitor implements ast.Visitor
     Type.T rt = this.type;
     //参数的类型列表
     LinkedList<Type.T> at = new LinkedList<Type.T>();
+    //在Elab时将这里的类型全部变为了函数原型，因为在Tans C时不需要at这个字段
     for (ast.Ast.Type.T t : e.at) {
       t.accept(this);
       at.add(this.type);

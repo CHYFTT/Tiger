@@ -7,8 +7,8 @@ import ast.Ast.Type;
 public class ClassBinding
 {
   public String extendss; // null for non-existing extends
-  public java.util.Hashtable<String, Type.T> fields;
-  public java.util.Hashtable<String, MethodType> methods;
+  public java.util.Hashtable<String, Type.T> fields;//存放类里面声明的变量
+  public java.util.Hashtable<String, MethodType> methods;//存放类里面定义的方法
 
   public ClassBinding(String extendss)
   {

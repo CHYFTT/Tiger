@@ -156,24 +156,49 @@ private void error()
       if (dec.type.toString().equals(argsty.get(i).toString()))
     	  ;//如果相等
       else
-      {//不相等时还可能可父类型匹配
-    	  /*
+      {//  如果不相等，有父类型的话，父类型和argsty匹配也可。
+    	  /*(不加这种情况的处理，会在Elab时直接报错mistype)
     	   * 此时要比较的两个type必须是ClassType的实例。
     	   * 因为Classbinding对象里面记录的extenss，通过classTable查看是否有父类
-    	   * 当确实存在父类时，直接用父类型替换Call对象的参数类型列表
     	   */
+    	  if(dec.type instanceof ClassType)
+    	  {
+    		  String currentcla=argsty.get(i).toString();
+    		  ClassBinding cb=this.classTable.get(currentcla);
+    		  boolean succ=false;
+    		  while(cb.extendss!=null)
+    		  {
+    			  if(cb.extendss.equals(dec.type.toString()))
+    			  {
+    				  succ=true;
+    				  break;
+    			  }
+    			  else
+    				  cb=this.classTable.get(cb.extendss);
+    		  }
+    		  if(succ)
+    			  ;
+    		  else
+    			  error(Error.MISTYPE,e.linenum);
+    	  }
+    	  else
+    		  error(Error.MISTYPE,e.linenum);
+    	  
+    	  
+    	  /* 更改call里面的参数列表的类型，之所以可以改变ast是因为在TransC时不需要Call.at，如果以后
+    	  * 有情况需要这个字段，可以在Ast.Call里面再加一个)
+    	  * 
+    	  * 循环将Call.at里面的类型全改为函数原型的类型
+    	  */
     	  if(dec.type instanceof ClassType&&
     			  argsty.get(i) instanceof ClassType)
     	  {
-    		  String maybesub=argsty.get(i).toString();
-    		  ClassBinding cbb=this.classTable.get(maybesub);
-    		  if(dec.type.toString().equals(cbb.extendss))
+    		  for (int j = 0; j < argsty.size(); j++) 
     		  {
-    			  Type.ClassType tc=new Type.ClassType(cbb.extendss);
-    			  argsty.set(i, tc);
+    		      Dec.DecSingle decc = (Dec.DecSingle) mty.argsType.get(j);
+    		      Type.ClassType tcc=(Type.ClassType)decc.type;
+    		      argsty.set(j, tcc);//通过e.at=argsty直接改变javaAst
     		  }
-    		  else
-    		 	error(Error.MISTYPE,e.linenum);
     	  }
       }
         
@@ -202,6 +227,7 @@ private void error()
       // useful in later phase.
       e.isField = true;
     }
+    //在上一步中已经遍历的所有的祖先！！！！
     if (type == null)
       error(Error.UNDECL,e.linenum);
     this.type = type;
@@ -310,9 +336,10 @@ private void error()
       type = this.classTable.get(this.currentClass, s.id);
       s.isField=true;
     }
+    
     if (type == null)
     	error(Error.UNDECL,s.linenum);
-    //s.isField=true;
+    
     s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
     					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
@@ -333,12 +360,14 @@ private void error()
   @Override
   public void visit(AssignArray s)
   {
+	  //先在本方法中找
 	  Type.T type=this.methodTable.get(s.id);
-	 
+	 //在类中找
 	  if(type==null)
 	  {
 		  type=this.classTable.get(this.currentClass, s.id);
 		  s.isField=true;
+		  
 	  }
 	  if(type==null)
 		  error(Error.UNDECL,s.linenum);
@@ -461,7 +490,7 @@ private void error()
 
     for (Stm.T s : m.stms)
     {
-    	System.out.println("This is the Stm:"+s.linenum );
+    	System.out.println("This is the Stm:"+s.linenum+" is "+s.toString() );
     	s.accept(this);
     	linenum=s.linenum;
     }
@@ -483,6 +512,13 @@ private void error()
   public void visit(Class.ClassSingle c)
   {
     this.currentClass = c.id;
+    /*
+     * 在这里应该添加extendss的判断。
+     * 当继承了基类时，应该将基类的声明和方法拼接在这个子类
+     * 
+     * 当实现了继承特性之后，子类中可以用在基类中声明的变量。
+     * 可以用基类中的方法
+     */
 
     for (Method.T m : c.methods) {
     	MethodSingle mm = (MethodSingle) m;

@@ -344,13 +344,13 @@ public class Ast
         this.isField = isField;
         this.linenum=0;
       }
-      public Id(String id,boolean isField)
-      {
-    	  this.id=id;
-    	  this.isField=isField;
-    	  this.linenum=0;
-    	  
-      }
+//      public Id(String id,boolean isField)
+//      {
+//    	  this.id=id;
+//    	  this.isField=isField;
+//    	  this.linenum=0;
+//    	  
+//      }
 
       @Override
       public void accept(ast.Visitor v)

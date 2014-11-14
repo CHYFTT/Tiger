@@ -54,7 +54,7 @@ public class ClassTable
   {
     ClassBinding cb = this.table.get(className);
     Type.T type = cb.fields.get(xid);
-    while (type == null) { // search all parent classes until found or fail
+    while (type == null) { // search all parent classes until found or fail！！
       if (cb.extendss == null)
         return type;
 
