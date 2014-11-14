@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PushbackInputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import ast.Ast.Program;
 import lexer.Lexer;
@@ -20,9 +22,17 @@ public class Tiger
 {
   public static void main(String[] args)
   {
+	Date begin=new Date();
+	String startTime;
+	String finishTime;
     InputStream fstream;
     Parser parser;
     PushbackInputStream f;
+    
+    SimpleDateFormat dateFormat =
+			new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    startTime=dateFormat.format(begin);
+    System.out.println("Tiger start at:"+startTime);
 
     // ///////////////////////////////////////////////////////
     // handle command line arguments
@@ -248,6 +258,14 @@ public class Tiger
     // file, or call java to run the bytecode file,
     // or dalvik to run the dalvik bytecode.
     // Your code here:
+    Date end=new Date();
+    finishTime=dateFormat.format(end);
+    System.out.println("Tiger finished at:"+finishTime);
+    long ms=end.getTime()-begin.getTime();
+    long sec=ms/1000;
+    long min=sec/60;
+    System.out.println("Tiger has run:   "+
+    		min+"(min),"+(sec%60)+"(sec),"+ms%1000+"(ms)");
 
     return;
   }
