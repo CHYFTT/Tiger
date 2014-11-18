@@ -3,6 +3,7 @@ package codegen.bytecode;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
+import codegen.C.Ast.Exp;
 import codegen.bytecode.Ast.Class;
 import codegen.bytecode.Ast.Class.ClassSingle;
 import codegen.bytecode.Ast.Dec;
@@ -17,21 +18,28 @@ import codegen.bytecode.Ast.Stm;
 import codegen.bytecode.Ast.Type;
 import codegen.bytecode.Ast.Type.Int;
 import codegen.bytecode.Ast.Stm.*;
+import elaborator.ElaboratorVisitor;
+import elaborator.MethodType;
 import util.Label;
 
 // Given a Java ast, translate it into Java bytecode.
 
 public class TranslateVisitor implements ast.Visitor
 {
-  private String classId;
+  private String classId;//记录正在Trans的类名
   private int index;
-  private Hashtable<String, Integer> indexTable;
+  private Hashtable<String, Integer> indexTable;//传说中的frame
+  //0号位置不存放数据，保留。
+  //这个HashTable的内容与JVM中的frame是一一对应
+  
   private Type.T type; // type after translation
   private Dec.T dec;
   private LinkedList<Stm.T> stms;
-  private Method.T method;
+  private Method.T method;//一个method拥有一个Stm链
+  
   private Class.T classs;
   private MainClass.T mainClass;
+  
   public Program.T program;
 
   public TranslateVisitor()
@@ -57,16 +65,30 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Add e)
   {
+	e.left.accept(this);
+	e.right.accept(this);
+	emit(new Iadd());
+	return;
+	  
   }
 
   @Override
   public void visit(ast.Ast.Exp.And e)
   {
+	  e.left.accept(this);
+	  e.right.accept(this);
+	  emit(new Iand());
+	  return;
+	  
   }
 
-  @Override
+  @Override//array[index]
   public void visit(ast.Ast.Exp.ArraySelect e)
   {
+	  e.array.accept(this);//arrayref这一步会执行Aload或Iload把ID的进栈
+	  e.index.accept(this);//index
+	  emit(new IAload());//retrieve integer from array
+	  return;
   }
 
   @Override
@@ -78,7 +100,9 @@ public class TranslateVisitor implements ast.Visitor
     }
     e.rt.accept(this);
     Type.T rt = this.type;
+    //参数的类型列表
     LinkedList<Type.T> at = new LinkedList<Type.T>();
+    //在Elab时将这里的类型全部变为了函数原型，因为在Tans C时不需要at这个字段
     for (ast.Ast.Type.T t : e.at) {
       t.accept(this);
       at.add(this.type);
@@ -90,46 +114,71 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.False e)
   {
+	  emit(new Ldc(0));
+	  return;
   }
 
   @Override
   public void visit(ast.Ast.Exp.Id e)
   {
+	  if(!e.isField)
+	  {
     int index = this.indexTable.get(e.id);
     ast.Ast.Type.T type = e.type;
     if (type.getNum() > 0)// a reference
-      emit(new Aload(index));
+      emit(new Aload(index));//retrieve object reference from local variable
     else
-      emit(new Iload(index));
+      emit(new Iload(index));//integer
+	  
     // but what about this is a field?
     return;
+	  }
+	  else
+	  {
+		  emit(new Aload(0));//当前类的引用会在0号位置
+		  //这一步是为了在栈里给Getfield创造需要的数据
+		  e.type.accept(this);
+		  emit(new codegen.bytecode.Ast.Stm.Getfield(
+				  this.classId,e.id,this.type));
+	  }
   }
 
-  @Override
+  @Override//ayyay.length
   public void visit(ast.Ast.Exp.Length e)
   {
+	  e.array.accept(this);
+	  emit(new ArrayLength());
+	 
   }
 
+  /*
+   * 
+   */
   @Override
   public void visit(ast.Ast.Exp.Lt e)
   {
-    Label tl = new Label(), fl = new Label(), el = new Label();
+    Label tl = new Label();//true
+    Label fl = new Label();//false
+    Label el = new Label();//exit
     e.left.accept(this);
-    e.right.accept(this);
-    emit(new Ificmplt(tl));
+    e.right.accept(this);//两个exp入栈
+    emit(new Ificmplt(tl));//比较，成功时goto t1，不成功时返回继续执行，也就是执行了f1
     emit(new LabelJ(fl));
     emit(new Ldc(0));
     emit(new Goto(el));
     emit(new LabelJ(tl));
     emit(new Ldc(1));
     emit(new Goto(el));
-    emit(new LabelJ(el));
+    emit(new LabelJ(el));//作为退出的Lable,一定要在最后
     return;
   }
 
-  @Override
+  @Override//new int[index]
   public void visit(ast.Ast.Exp.NewIntArray e)
   {
+	  e.exp.accept(this);
+	  emit(new NewIntArray());
+	  return;
   }
 
   @Override
@@ -142,6 +191,18 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.Not e)
   {
+	  Label tl = new Label(), el = new Label();
+		e.exp.accept(this);
+		this.emit(new Ifne(tl));
+		
+		this.emit(new Ldc(1));
+		this.emit(new Goto(el));
+		
+		this.emit(new LabelJ(tl));
+		this.emit(new Ldc(0));
+		
+		this.emit(new LabelJ(el));
+		return;
   }
 
   @Override
@@ -179,6 +240,8 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Exp.True e)
   {
+	  emit(new Ldc(1));
+	  return;
   }
 
   // ///////////////////////////////////////////////////
@@ -186,32 +249,59 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.Assign s)
   {
-    s.exp.accept(this);
-    int index = this.indexTable.get(s.id);
-    ast.Ast.Type.T type = s.type;
-    if (type.getNum() > 0)
-      emit(new Astore(index));
-    else
-      emit(new Istore(index));
-
-    return;
+	  //同样要特殊处理id
+	  ast.Ast.Exp.Id id=new ast.Ast.Exp.Id(s.id, s.type,s.isField);
+	  if(!id.isField)
+	  {
+		  s.exp.accept(this);
+		  int index = this.indexTable.get(s.id);
+		  ast.Ast.Type.T type = s.type;
+		  if (type.getNum() > 0)
+			  emit(new Astore(index));
+		  else
+			  emit(new Istore(index));////store in integer array
+		  return;
+	  }
+	  else
+	  {
+		  
+		  emit(new Aload(0));//赋值的目标先进栈
+		  
+		  s.exp.accept(this);//value再进栈
+		  
+		  s.type.accept(this);
+		  emit(new Putfield(this.classId,s.id,this.type));
+	  }
+	  
   }
 
-  @Override
+  @Override //id[exp]=exp
   public void visit(ast.Ast.Stm.AssignArray s)
   {
+	 //需要特殊对待s.id
+	  ast.Ast.Exp.Id id=new ast.Ast.Exp.Id(s.id, s.tyep, s.isField);
+	  
+	  id.accept(this);//objref,index,value依次进栈
+	  s.index.accept(this);
+	  s.exp.accept(this);
+	  
+	  emit(new IAstore());//store in integer array
   }
 
   @Override
   public void visit(ast.Ast.Stm.Block s)
   {
+	  for(ast.Ast.Stm.T t:s.stms)
+	  {
+		  t.accept(this);
+	  }
   }
 
   @Override
   public void visit(ast.Ast.Stm.If s)
   {
     Label tl = new Label(), fl = new Label(), el = new Label();
-    s.condition.accept(this);
+    s.condition.accept(this);//现将condition的结果进栈
 
     emit(new Ifne(tl));
     emit(new LabelJ(fl));
@@ -235,17 +325,39 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Stm.While s)
   {
+	  Label start=new Label();
+	  Label t1=new Label();
+	  Label f1=new Label();
+	  Label e1=new Label();
+	  
+	  emit(new LabelJ(start));
+	  s.condition.accept(this);
+	  emit(new Ifne(t1));
+	  
+	  emit(new LabelJ(f1));
+	  emit(new Goto(e1));
+	  
+	  emit(new LabelJ(t1));
+	  s.body.accept(this);
+	  emit(new Goto(start));
+	  
+	  emit(new LabelJ(e1));
+	  
   }
 
   // type
   @Override
   public void visit(ast.Ast.Type.Boolean t)
   {
+	  this.type=new codegen.bytecode.Ast.Type.Int();
+	  return;
   }
 
   @Override
   public void visit(ast.Ast.Type.ClassType t)
   {
+	  this.type=new codegen.bytecode.Ast.Type.ClassType(t.id);
+	  return;
   }
 
   @Override
@@ -257,6 +369,8 @@ public class TranslateVisitor implements ast.Visitor
   @Override
   public void visit(ast.Ast.Type.IntArray t)
   {
+	  this.type=new codegen.bytecode.Ast.Type.IntArray();
+	  return;
   }
 
   // dec
@@ -265,6 +379,9 @@ public class TranslateVisitor implements ast.Visitor
   {
     d.type.accept(this);
     this.dec = new DecSingle(this.type, d.id);
+    //将所有声明都放到indexTable当中,除了Class里面的声明
+    if(d.isField)
+    	return;
     this.indexTable.put(d.id, index++);
     return;
   }
@@ -276,20 +393,24 @@ public class TranslateVisitor implements ast.Visitor
     // record, in a hash table, each var's index
     // this index will be used in the load store operation
     this.index = 1;
+    //每个方法拥有一个HashTable
     this.indexTable = new Hashtable<String, Integer>();
-
+    //返回类型
     m.retType.accept(this);
     Type.T newRetType = this.type;
+    //参数列表声明
     LinkedList<Dec.T> newFormals = new LinkedList<Dec.T>();
     for (ast.Ast.Dec.T d : m.formals) {
       d.accept(this);
       newFormals.add(this.dec);
     }
+    //局部变量声明
     LinkedList<Dec.T> locals = new java.util.LinkedList<Dec.T>();
     for (ast.Ast.Dec.T d : m.locals) {
       d.accept(this);
       locals.add(this.dec);
     }
+    //语句
     this.stms = new LinkedList<Stm.T>();
     for (ast.Ast.Stm.T s : m.stms) {
       s.accept(this);
@@ -298,10 +419,10 @@ public class TranslateVisitor implements ast.Visitor
     // return statement is specially treated
     m.retExp.accept(this);
 
-    if (m.retType.getNum() > 0)
-      emit(new Areturn());
+    if (m.retType.getNum() > 0)//is reference
+      emit(new Areturn());//return from method with object reference result
     else
-      emit(new Ireturn());
+      emit(new Ireturn());//return from method with integer result
 
     this.method = new MethodSingle(newRetType, m.id, this.classId, newFormals,
         locals, this.stms, 0, this.index);
@@ -314,14 +435,16 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.Ast.Class.ClassSingle c)
   {
     this.classId = c.id;
+    //遍历javaAST的一个类的decsList，显然，每一个类都应该构造一个新的decsList
     LinkedList<Dec.T> newDecs = new LinkedList<Dec.T>();
     for (ast.Ast.Dec.T dec : c.decs) {
-      dec.accept(this);
+      dec.accept(this);//不会将id放入HashTable！典型的为了副作用而调用。class不需要HashTable
       newDecs.add(this.dec);
     }
+    //遍历methodList
     LinkedList<Method.T> newMethods = new LinkedList<Method.T>();
     for (ast.Ast.Method.T m : c.methods) {
-      m.accept(this);
+      m.accept(this);//在此之后this.method会变为new MethodSingal
       newMethods.add(this.method);
     }
     this.classs = new ClassSingle(c.id, c.extendss, newDecs, newMethods);
@@ -334,6 +457,7 @@ public class TranslateVisitor implements ast.Visitor
   {
     c.stm.accept(this);
     this.mainClass = new MainClassSingle(c.id, c.arg, this.stms);
+    //当处理完mainClass时，初始化一个新的Stm链
     this.stms = new LinkedList<Stm.T>();
     return;
   }

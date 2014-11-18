@@ -22,6 +22,7 @@ import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.T;
 import ast.Ast.Exp.This;
 import ast.Ast.Exp.Times;
+import ast.Ast.Exp.ArraySelect;
 import ast.Ast.MainClass.MainClassSingle;
 import ast.Ast.Program.ProgramSingle;
 import ast.Ast.Stm.Assign;
@@ -40,7 +41,9 @@ public class Parser {
 	Token current;
 	Token currentNext;//in order to deal with the margin between VarDecls and Statements
 	boolean isSpecial=false;//when current.kind=Kind.TOKEN_ID,it may special
-	int linenum;
+	boolean isField=true;//为了将声明分类，区别class与method的声明，在bytecode中会用到
+	int linenum=1;
+	Type.T currentType=null;
 	
 
 	public Parser(String fname, java.io.PushbackInputStream f) {
@@ -55,7 +58,7 @@ public class Parser {
 
 	private void advance() // advance() can get the nextToken
 	{
-		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + linenum);
+		System.out.println(current.kind.toString() + "  "+current.lexeme+"   " + current.lineNum);
 		linenum=current.lineNum;
 		current = lexer.nextToken();
 	}
@@ -64,14 +67,14 @@ public class Parser {
 		if (kind == current.kind) {
 			advance();
 		} else {
-			System.out.println("Expects: " + kind.toString());
-			System.out.println("But got: " + current.kind.toString());
+			System.err.println("Expects: " + kind.toString());
+			System.err.println("But got: " + current.kind.toString());
 			System.exit(1);
 		}
 	}
 
 	private void error() {
-		System.out.println("Syntax error: compilation aborting...at line:\n"+linenum);
+		System.err.println("Syntax error: compilation aborting...at line:\n"+linenum);
 		System.exit(1);
 		return;
 	}
@@ -133,7 +136,7 @@ public class Parser {
 		case TOKEN_ID:
 			s=current.lexeme;
 			advance();
-			return new Id(s,linenum);
+			return new Id(s,currentType,false,linenum);
 		case TOKEN_NEW: {
 			advance();
 			switch (current.kind) {
@@ -186,10 +189,11 @@ public class Parser {
 				return new Call(exp,s,args,linenum);
 			} else {
 				//[exp]
+				Exp.T t=(Exp.Id)exp;
 				advance();
 				exp=parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
-				return exp;
+				return new ArraySelect(t,exp,linenum);
 			}
 		}
 		return exp;
@@ -236,9 +240,17 @@ public class Parser {
 		Exp.T left,right=null;
 		left=parseAddSubExp();
 		while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
+			if(current.kind==Kind.TOKEN_ADD){
 			advance();
 			right=parseAddSubExp();
 			return new Exp.Add(left, right,linenum);
+			}
+			else
+			{
+				advance();
+				right=parseAddSubExp();
+				return new Exp.Sub(left, right,linenum);
+			}
 		}
 		return left;
 	}
@@ -440,16 +452,20 @@ public class Parser {
 			{
 				eatToken(Kind.TOKEN_LBRACK);
 				eatToken(Kind.TOKEN_RBRACK);
-				return new Type.IntArray() ;
+				currentType=new Type.IntArray();
+				return currentType ;
 			}
-			return new Type.Int();
+			currentType=new Type.Int();
+			return currentType;
 		case TOKEN_BOOLEAN:
 			eatToken(Kind.TOKEN_BOOLEAN);
-			return new Type.Boolean();
+			currentType=new Type.Boolean();
+			return currentType;
 		default:
 			String s=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
-			return new Type.ClassType(s);
+			currentType=new Type.ClassType(s);
+			return currentType;
 		}
 	}
 
@@ -463,7 +479,7 @@ public class Parser {
 
 		Type.T type=parseType();// reference to the return Exp
 		id=current.lexeme;
-		dec=new DecSingle(type,id);
+		dec=new DecSingle(type,id,isField);
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_SEMI);
 		return dec;
@@ -473,7 +489,7 @@ public class Parser {
 			Type.T type=new Type.ClassType(current.lexeme);
 			current=currentNext;
 			id=current.lexeme;
-			dec=new DecSingle(type,id);
+			dec=new DecSingle(type,id,isField);
 			eatToken(Kind.TOKEN_ID);
 			eatToken(Kind.TOKEN_SEMI);
 			isSpecial=false;
@@ -547,13 +563,13 @@ public class Parser {
 			type=parseType();
 			id=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
-			formals.add(new DecSingle(type,id));
+			formals.add(new DecSingle(type,id,isField));
 			while (current.kind == Kind.TOKEN_COMMER) {
 				advance();
 				type=parseType();
 				id=current.lexeme;
 				eatToken(Kind.TOKEN_ID);
-				formals.add(new DecSingle(type,id));
+				formals.add(new DecSingle(type,id,isField));
 			}
 		}
 		return formals;
@@ -599,8 +615,10 @@ public class Parser {
 	private LinkedList<Method.T> parseMethodDecls() {
 		LinkedList<Method.T> methods=new LinkedList<ast.Ast.Method.T>();
 		while (current.kind == Kind.TOKEN_PUBLIC) {
+			isField=false;
 			methods.add(parseMethod());
 		}
+		isField=true;
 		return methods;
 	}
 
@@ -615,8 +633,9 @@ public class Parser {
 		id=current.lexeme;
 		eatToken(Kind.TOKEN_ID);
 		if (current.kind == Kind.TOKEN_EXTENDS) {
-			extendss="extends";
+			
 			eatToken(Kind.TOKEN_EXTENDS);
+			extendss=current.lexeme;
 			eatToken(Kind.TOKEN_ID);
 		}
 		eatToken(Kind.TOKEN_LBRACE);

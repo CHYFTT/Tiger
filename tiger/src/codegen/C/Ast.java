@@ -3,6 +3,8 @@ package codegen.C;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import ast.Ast.Type.T;
+
 public class Ast
 {
   // /////////////////////////////////////////////
@@ -11,8 +13,17 @@ public class Ast
   {
     public static abstract class T implements codegen.C.Acceptable
     {
+    	/*此处使用class T实现Acceptable接口，然后再让所有的Type的内部类继承自T，
+    	 * 目的是可以用Type.T代表所有类型。
+    	 * 
+    	 * 之所以定义为abstract，是因为抽象类可以部分实现或不实现接口中的方法。
+    	 * 
+    	 */
     }
-
+    //public static class ClassType implements codegen.C.Acceptable
+    /*
+     * 如果直接实现接口，则没有一种可以代表所有类型的类，所以需要上面那个T作为父类。
+     */
     public static class ClassType extends T
     {
       public String id;
@@ -195,10 +206,19 @@ public class Ast
     public static class Id extends T
     {
       public String id;
+      public boolean isField;
+	  //public Type.T type;
 
       public Id(String id)
       {
         this.id = id;
+      }
+      
+      public Id(String id,boolean isField)
+      {
+        this.id = id;
+        this.isField=isField;
+        //this.type=type;
       }
 
       @Override
@@ -385,11 +405,13 @@ public class Ast
     {
       public String id;
       public Exp.T exp;
+      public boolean isField;
 
-      public Assign(String id, Exp.T exp)
+      public Assign(String id, Exp.T exp,boolean isField)
       {
         this.id = id;
         this.exp = exp;
+        this.isField=isField;
       }
 
       @Override
@@ -404,12 +426,14 @@ public class Ast
       public String id;
       public Exp.T index;
       public Exp.T exp;
+      public boolean isField;
 
-      public AssignArray(String id, Exp.T index, Exp.T exp)
+      public AssignArray(String id, Exp.T index, Exp.T exp,boolean isField)
       {
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.isField=isField;
       }
 
       @Override
@@ -558,13 +582,13 @@ public class Ast
 
     public static class MethodSingle extends T
     {
-      public Type.T retType;
-      public String classId;
-      public String id;
-      public LinkedList<Dec.T> formals;
-      public LinkedList<Dec.T> locals;
-      public LinkedList<Stm.T> stms;
-      public Exp.T retExp;
+      public Type.T retType;//声明时的返回类型
+      public String classId;//所属类的id
+      public String id;//方法名
+      public LinkedList<Dec.T> formals;//参数列表
+      public LinkedList<Dec.T> locals;//声明
+      public LinkedList<Stm.T> stms;//语句
+      public Exp.T retExp;//return的返回类型
 
       public MethodSingle(Type.T retType, String classId, String id,
           LinkedList<Dec.T> formals, LinkedList<Dec.T> locals,

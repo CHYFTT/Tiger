@@ -14,10 +14,20 @@ public interface Visitor
   public void visit(Aload s);
 
   public void visit(Areturn s);
+  
+  public void visit(ArrayLength s);
 
   public void visit(Astore s);
-
+  
+  public void visit(Getfield s);
+  
   public void visit(Goto s);
+  
+  public void visit(Iand s);
+ 
+  public void visit(IAload s);
+  
+  public void visit(IAstore s);
 
   public void visit(Ificmplt s);
 
@@ -31,6 +41,8 @@ public interface Visitor
 
   public void visit(Istore s);
 
+  public void visit(Iadd s);
+
   public void visit(Isub s);
 
   public void visit(Invokevirtual s);
@@ -40,8 +52,12 @@ public interface Visitor
   public void visit(Ldc s);
 
   public void visit(Print s);
+ 
+  public void visit(Putfield s);
 
   public void visit(New s);
+  
+  public void visit(NewIntArray s);
 
   // type
   public void visit(ClassType t);

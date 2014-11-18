@@ -21,19 +21,23 @@ public class ClassTable
   public void initDecs(String current,
       java.util.LinkedList<Dec.T> decs)
   {
-    ClassBinding cb = this.table.get(current);
+    ClassBinding cb = this.table.get(current);//根据类名，找到对应的ClassBunding
     for (Dec.T dec : decs) {
-      Dec.DecSingle decc = (Dec.DecSingle) dec;
-      cb.put(current, decc.type, decc.id);
+      Dec.DecSingle decc = (Dec.DecSingle) dec;//创建新的C的Dec
+      cb.put(current, decc.type, decc.id);//放入的对应的classbinding当中
+      										//也就是放到了classbinding对象的field表里面
     }
-    this.table.put(current, cb);
+    //this.table.put(current, cb);//？？？？？？？？？---------多余，待测试。
+    							//是否注释掉对产生的C文件没有影响。
   }
 
   public void initMethod(String current, Type.T ret,
       java.util.LinkedList<Dec.T> args, String mid)
   {
-    ClassBinding cb = this.table.get(current);
+    ClassBinding cb = this.table.get(current);//根据类名找到对应的classBunding
     cb.putm(current, ret, args, mid);
+    //显然，在这里没有this.table.put(current, cb);
+    //this.table.put(current,cb);
     return;
   }
 

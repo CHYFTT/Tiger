@@ -2,9 +2,14 @@ import static control.Control.ConAst.dumpAst;
 import static control.Control.ConAst.testFac;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PushbackInputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import ast.Ast.Program;
 import lexer.Lexer;
@@ -17,9 +22,17 @@ public class Tiger
 {
   public static void main(String[] args)
   {
+	Date begin=new Date();
+	String startTime;
+	String finishTime;
     InputStream fstream;
     Parser parser;
     PushbackInputStream f;
+    
+    SimpleDateFormat dateFormat =
+			new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    startTime=dateFormat.format(begin);
+    System.out.println("Tiger start at:"+startTime);
 
     // ///////////////////////////////////////////////////////
     // handle command line arguments
@@ -45,10 +58,12 @@ public class Tiger
       switch (control.Control.ConCodeGen.codegen) {
       case Bytecode:
         System.out.println("bytecode codegen");
-        codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
+        codegen.bytecode.TranslateVisitor trans = 
+        		new codegen.bytecode.TranslateVisitor();
         ast.Fac.prog.accept(trans);
         codegen.bytecode.Ast.Program.T bytecodeAst = trans.program;
-        codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+        codegen.bytecode.PrettyPrintVisitor ppbc =
+        		new codegen.bytecode.PrettyPrintVisitor();
         bytecodeAst.accept(ppbc);
         break;
       case C:
@@ -127,23 +142,106 @@ public class Tiger
     // elaborate the AST, report all possible errors.
     elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
     theAst.accept(elab);
-    System.out.println("Lab3 is finished....to be continue...");
+    System.out.println("Lab2 is finished....to be continue...");
 
     // code generation
     switch (control.Control.ConCodeGen.codegen) {
     case Bytecode:
-      codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
+      System.out.println("Start generate Bytecode....");
+      codegen.bytecode.TranslateVisitor trans =
+    		  new codegen.bytecode.TranslateVisitor();
       theAst.accept(trans);
-      codegen.bytecode.Ast.Program.T bytecodeAst = trans.program;
-      codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+      codegen.bytecode.Ast.Program.ProgramSingle bytecodeAst =
+    		  (codegen.bytecode.Ast.Program.ProgramSingle) trans.program;
+      codegen.bytecode.PrettyPrintVisitor ppbc = 
+    		  new codegen.bytecode.PrettyPrintVisitor();
       bytecodeAst.accept(ppbc);
+      System.out.println("Bytecode finished....");
+      
+      System.out.println("Jasmin start...");
+      codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = 
+    		  (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
+      String command2="java -jar jasmin.jar test\\"+mainClass.id+".j";
+      String err2=null;
+		try {
+			Process pro2=Runtime.getRuntime().exec(command2);
+			BufferedReader br=new BufferedReader(
+					new InputStreamReader(pro2.getErrorStream()));
+			while((err2=br.readLine())!=null)
+			{
+				System.out.println(err2);
+			}
+			
+			for(codegen.bytecode.Ast.Class.T c:bytecodeAst.classes)
+		      {
+				codegen.bytecode.Ast.Class.ClassSingle cs=
+						(codegen.bytecode.Ast.Class.ClassSingle)c;
+		    	command2="java -jar jasmin.jar test\\"+cs.id+".j";
+		    	pro2=Runtime.getRuntime().exec(command2);
+		    	br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+		    	while((err2=br.readLine())!=null)
+		    	{
+		    		System.out.println(err2);
+		    	}
+		      
+		      }
+			System.out.println("Jasmin finished...");
+			command2="java "+mainClass.id;
+			System.out.println("Run "+mainClass.id+".class");
+			pro2=Runtime.getRuntime().exec(command2);
+			br=new BufferedReader(new InputStreamReader(pro2.getInputStream()));
+			while((err2=br.readLine())!=null)
+			{
+				System.out.println(err2);
+			}
+			br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+			while((err2=br.readLine())!=null)
+			{
+				System.err.println(err2);
+			}
+			System.out.println("Execute finished...");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+      
       break;
     case C:
+      System.out.println("Start generate C....");
       codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
       theAst.accept(transC);
       codegen.C.Ast.Program.T cAst = transC.program;
       codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
       cAst.accept(ppc);
+      System.out.println("Finished generate C...");
+      System.out.println("GCC in windows...");
+      String command="gcc "+fname+
+    		  ".c  runtime\\runtime.c "+"-o "+fname+".exe";
+      BufferedReader br=null;
+      String err=null;
+      
+		try {
+			System.out.println("Run "+command);
+			Process proC=Runtime.getRuntime().exec(command);
+			br=new BufferedReader(new InputStreamReader(proC.getErrorStream()));
+			while((err=br.readLine())!=null)
+			{
+				System.out.println(err);
+			}
+			System.out.println("GCC complie finished...");
+			command=fname+".exe";
+			System.out.println("Run "+command);
+			proC=Runtime.getRuntime().exec(command);
+			br=new BufferedReader(new InputStreamReader(proC.getInputStream()));
+			while((err=br.readLine())!=null)
+			{
+				System.out.println(err);
+			}
+			System.out.println("Execute finished...");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
       break;
     case Dalvik:
       // similar
@@ -160,6 +258,14 @@ public class Tiger
     // file, or call java to run the bytecode file,
     // or dalvik to run the dalvik bytecode.
     // Your code here:
+    Date end=new Date();
+    finishTime=dateFormat.format(end);
+    System.out.println("Tiger finished at:"+finishTime);
+    long ms=end.getTime()-begin.getTime();
+    long sec=ms/1000;
+    long min=sec/60;
+    System.out.println("Tiger has run:   "+
+    		min+"(min),"+(sec%60)+"(sec),"+ms%1000+"(ms)");
 
     return;
   }

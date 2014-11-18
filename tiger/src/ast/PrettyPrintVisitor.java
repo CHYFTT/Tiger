@@ -97,6 +97,10 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ArraySelect e)
   {
+	  e.array.accept(this);
+	  this.say("[");
+	  e.index.accept(this);
+	  this.say("]");
   }
 
   @Override
@@ -133,6 +137,7 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(Length e)
   {
 	  e.array.accept(this);
+	  this.say(".length");
   }
 
   @Override
@@ -208,18 +213,21 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Assign s)
   {
+	
     this.printSpaces();
     this.say(s.id + " = ");
     s.exp.accept(this);
     this.say(";\n");
     return;
+	
+	
   }
 
   @Override
   public void visit(AssignArray s)
   {
 	  this.printSpaces();
-	  this.say("int[");
+	  this.say(s.id+"[");
 	  s.index.accept(this);
 	  this.say("]");
 	  this.say(" = ");
@@ -395,6 +403,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Program.ProgramSingle p)
   {
+	  
     p.mainClass.accept(this);
     this.sayln("");
     for (ast.Ast.Class.T classs : p.classes) {

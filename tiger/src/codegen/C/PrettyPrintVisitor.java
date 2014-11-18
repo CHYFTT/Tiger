@@ -89,21 +89,34 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Add e)
   {
+	  e.left.accept(this);
+	  this.say(" + ");
+	  e.right.accept(this);
   }
 
   @Override
   public void visit(And e)
   {
+	  e.left.accept(this);
+	  this.say("&&");
+	  e.right.accept(this);
   }
 
   @Override
   public void visit(ArraySelect e)
   {
+	  e.array.accept(this);
+	  this.say("[");
+	  e.index.accept(this);
+	  this.say("]");
   }
 
   @Override
   public void visit(Call e)
   {
+	  /*
+	   * 在这里面与jasmin不同的是，C语言的调用不需要输出调用函数的参数
+	   */
     this.say("(" + e.assign + "=");
     e.exp.accept(this);
     this.say(", ");
@@ -124,12 +137,18 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Id e)
   {
-    this.say(e.id);
+	  if(e.isField==false)
+      this.say(e.id);
+	  else
+	  this.say("this->"+e.id);
+	 
   }
 
   @Override
   public void visit(Length e)
   {
+	  e.array.accept(this);
+	  this.say("[-1]");
   }
 
   @Override
@@ -144,11 +163,22 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(NewIntArray e)
   {
+	  //重点
+	  //new int[exp]------>(int)malloc((exp)*sizeof(int))
+//	  this.say("(int)malloc((");
+//	  e.exp.accept(this);
+//	  this.say(")*sizeof(int))");
+	  this.say("(int*)Tiger_new_array(");
+	  e.exp.accept(this);
+	  this.say(")");
   }
 
   @Override
+
   public void visit(NewObject e)
   {
+	  //重点！！
+	  //new Object()----->(struct e.id *)malloc(sizeof(struct e.id))
     this.say("((struct " + e.id + "*)(Tiger_new (&" + e.id
         + "_vtable_, sizeof(struct " + e.id + "))))");
     return;
@@ -157,6 +187,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
+	  this.say("!(");
+	  e.exp.accept(this);
+	  this.say(")");
   }
 
   @Override
@@ -194,21 +227,53 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Assign s)
   {
-    this.printSpaces();
-    this.say(s.id + " = ");
-    s.exp.accept(this);
-    this.say(";");
-    return;
+
+	   this.printSpaces();
+		if(s.isField==false)
+		{
+			this.say(s.id + " = ");
+		}
+		else 
+		{
+			this.say("this->"+s.id + " = ");
+		}
+		s.exp.accept(this);
+		this.sayln(";");
+		return;
   }
 
   @Override
   public void visit(AssignArray s)
   {
+	  this.printSpaces();
+	  if(s.isField==false)
+	  {
+		  this.say(s.id+"[");
+	  }
+	  else
+	  {
+		  this.say("this->"+s.id+"[");
+	  }
+	  s.index.accept(this);
+	  this.say("]");
+	  this.say(" = ");
+	  s.exp.accept(this);
+	  this.sayln(";");
+	  
   }
 
   @Override
   public void visit(Block s)
   {
+	  this.sayln("");
+	  this.printSpaces();
+	  this.sayln("{");
+	  this.indent();
+	  for(Stm.T b:s.stms)
+		  b.accept(this);
+	  this.unIndent();
+	  this.printSpaces();
+	  this.sayln("}");
   }
 
   @Override
@@ -232,7 +297,7 @@ public class PrettyPrintVisitor implements Visitor
   }
 
   @Override
-  public void visit(Print s)
+  public void visit(Print s)   
   {
     this.printSpaces();
     this.say("System_out_println (");
@@ -244,6 +309,14 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(While s)
   {
+	  this.printSpaces();
+	  this.say("while (");
+	  s.condition.accept(this);
+	  this.say(")");
+	  this.indent();
+	  s.body.accept(this);
+	  this.unIndent();
+	  this.printSpaces();
   }
 
   // type
@@ -262,37 +335,42 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArray t)
   {
+	  this.say("int* ");
   }
 
   // dec
   @Override
   public void visit(DecSingle d)
   {
+	  d.type.accept(this);
+	  this.say("");
   }
 
   // method
   @Override
   public void visit(MethodSingle m)
   {
-    m.retType.accept(this);
-    this.say(" " + m.classId + "_" + m.id + "(");
+    m.retType.accept(this);//处理返回值
+    this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
     int size = m.formals.size();
-    for (Dec.T d : m.formals) {
+    for (Dec.T d : m.formals) {//参数列表
       DecSingle dec = (DecSingle) d;
       size--;
-      dec.type.accept(this);
-      this.say(" " + dec.id);
+      dec.type.accept(this);//声明的类型， int num_aux;
+      this.say(" " + dec.id);//声明的ID
       if (size > 0)
         this.say(", ");
     }
     this.sayln(")");
-    this.sayln("{");
-
+    
+    
+    
+    this.sayln("{");//局部变量声明
     for (Dec.T d : m.locals) {
       DecSingle dec = (DecSingle) d;
       this.say("  ");
-      dec.type.accept(this);
-      this.say(" " + dec.id + ";\n");
+      dec.type.accept(this);//类型
+      this.say(" " + dec.id + ";\n");//id
     }
     this.sayln("");
     for (Stm.T s : m.stms)
@@ -309,6 +387,7 @@ public class PrettyPrintVisitor implements Visitor
   {
     this.sayln("int Tiger_main ()");
     this.sayln("{");
+    
     for (Dec.T dec : m.locals) {
       this.say("  ");
       DecSingle d = (DecSingle) dec;
@@ -316,7 +395,9 @@ public class PrettyPrintVisitor implements Visitor
       this.say(" ");
       this.sayln(d.id + ";");
     }
+    
     m.stm.accept(this);
+    
     this.sayln("}\n");
     return;
   }
@@ -329,9 +410,23 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("{");
     for (codegen.C.Ftuple t : v.ms) {
       this.say("  ");
-      t.ret.accept(this);
-      this.sayln(" (*" + t.id + ")();");
+      t.ret.accept(this);//方法的返回值
+      this.say(" (*" + t.id + ")(");//方法名+参数
+      int size=t.args.size();
+      
+      for(Dec.T d:t.args)
+      {
+    	  DecSingle dd=(DecSingle)d;
+    	  dd.type.accept(this);
+    	  this.say(" " + dd.id);
+    	  size--;
+    	  if(size>0)
+    		  this.say(",");
+      }
+      
+      this.sayln(");");
     }
+    
     this.sayln("};\n");
     return;
   }
@@ -355,7 +450,7 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("struct " + c.id);
     this.sayln("{");
     this.sayln("  struct " + c.id + "_vtable *vptr;");
-    for (codegen.C.Tuple t : c.decs) {
+    for (codegen.C.Tuple t : c.decs) {//处理类里面的声明
       this.say("  ");
       t.type.accept(this);
       this.say(" ");
@@ -388,31 +483,61 @@ public class PrettyPrintVisitor implements Visitor
 
     this.sayln("// This is automatically generated by the Tiger compiler.");
     this.sayln("// Do NOT modify!\n");
+  
 
     this.sayln("// structures");
-    for (codegen.C.Ast.Class.T c : p.classes) {
+    for (codegen.C.Ast.Class.T c : p.classes) {//处理类的声明
       c.accept(this);
     }
 
     this.sayln("// vtables structures");
-    for (Vtable.T v : p.vtables) {
-      v.accept(this);
-    }
+    for (Vtable.T v : p.vtables) {//虚函数表，里面放有函数指针.注意！！！函数指针需要带参数。
+      v.accept(this);				//这里为了可以打印函数指针的参数，对classTable的初始化
+    }								//进行了修改，在Ftuple
     this.sayln("");
-
-    this.sayln("// methods");
-    for (Method.T m : p.methods) {
-      m.accept(this);
+    
+    
+    this.sayln("//methods decl");//方法声明
+    for(Method.T mm:p.methods)
+    {
+    	MethodSingle m=(MethodSingle)mm;
+    	m.retType.accept(this);//处理返回值
+        this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
+        int size = m.formals.size();
+        for (Dec.T d : m.formals) {//参数列表
+          DecSingle dec = (DecSingle) d;
+          size--;
+          dec.type.accept(this);//声明的类型， int num_aux;
+          this.say(" " + dec.id);//声明的ID
+          if (size > 0)
+            this.say(", ");
+        }
+        this.sayln(");");
     }
-    this.sayln("");
-
-    this.sayln("// vtables");
+    
+    
+    this.sayln("// vtables");//虛函数表初始化-----在初始化之前必须先声明方法
     for (Vtable.T v : p.vtables) {
       outputVtable((VtableSingle) v);
     }
     this.sayln("");
+    
+    
 
-    this.sayln("// main method");
+    this.sayln("// methods");
+    for (Method.T m : p.methods) {//方法的定义------在方法定义以前，就应该初始化虚函数表
+    							//但是，虚函数表的初始化又需要方法名，所以在方法定义之前，
+    							//应该先声明方法
+      m.accept(this);
+    }
+    this.sayln("");
+    
+
+   
+    
+    
+
+    this.sayln("// main method");//处理main函数
     p.mainMethod.accept(this);
     this.sayln("");
 

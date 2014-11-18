@@ -127,6 +127,7 @@ public class Ast
       }
     }
 
+
     public static class Areturn extends T
     {
       public Areturn()
@@ -155,7 +156,40 @@ public class Ast
         v.visit(this);
       }
     }
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * arrayref  |  length  |
+     * ---------------------*/
+public static class ArrayLength extends T
+{
 
+	@Override
+	public void accept(Visitor v) {
+		v.visit(this);
+		
+	}
+	
+}
+public static class Getfield extends T
+{
+	String classId;
+	String id;
+	Type.T type;
+	
+	public Getfield(String classId,String id,Type.T type)
+	{
+		this.classId=classId;
+		this.id=id;
+		this.type=type;
+	}
+
+	@Override
+	public void accept(Visitor v) {
+		v.visit(this);
+	}
+	
+}
     public static class Goto extends T
     {
       public Label l;
@@ -171,7 +205,54 @@ public class Ast
         v.visit(this);
       }
     }
+    
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * index     |  value   |
+     * ---------------------
+     * arrayref  |          |
+     * ---------------------*/
+    public static class IAload extends T
+    {
 
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    }
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * value     |          |
+     * ----------------------
+     * index     |          |
+     * ---------------------
+     * arrayref  |          |
+     * ---------------------*/
+    public static class IAstore extends T
+    {
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    }
+    
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * value1    |          |
+     * ----------------------
+     * value2    |          |
+     * ---------------------
+     *           |          |
+     * ---------------------*/
+   //jump if one integer is less than another
     public static class Ificmplt extends T
     {
       public Label l;
@@ -188,6 +269,14 @@ public class Ast
       }
     }
 
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     *  value    |          |
+     * ---------------------
+     *           |          |
+     * ---------------------*/
+    //jump if nonzero
     public static class Ifne extends T
     {
       public Label l;
@@ -203,7 +292,13 @@ public class Ast
         v.visit(this);
       }
     }
-
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     *           | int-value|
+     * ---------------------
+     *           |          |
+     * ---------------------*/
     public static class Iload extends T
     {
       public int index;
@@ -233,12 +328,23 @@ public class Ast
       }
     }
 
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * arg1      | result   |
+     * ---------------------
+     * arg2      |          |
+     * ----------------------
+     * ...       |          |
+     * ----------------------
+     * objref    |          |
+     * ---------------------*/
     public static class Invokevirtual extends T
     {
       public String f;
       public String c;
-      public LinkedList<Type.T> at;
-      public Type.T rt;
+      public LinkedList<Type.T> at;//参数列表，这个列表里面应该放父类的类型
+      public Type.T rt;//返回类型
 
       public Invokevirtual(String f, String c, LinkedList<Type.T> at, Type.T rt)
       {
@@ -283,7 +389,35 @@ public class Ast
         v.visit(this);
       }
     }
+  
+    public static class Iadd extends T
+    {
+    	public Iadd()
+    	{
+    		
+    	}
+    	@Override
+    	public void accept(Visitor v)
+    	{
+    		v.visit(this);
+    	}
+    }
+    public static class Iand extends T
+    {
 
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    }
+    
+    
+     /* Pops two ints off the operand stack, subtracts the top one from 
+     * the second (i.e. computes value2 - value1), and pushes the 
+     * int result back onto the stack.
+     */
     public static class Isub extends T
     {
       public Isub()
@@ -297,6 +431,7 @@ public class Ast
       }
     }
 
+   
     public static class LabelJ extends T
     {
       public util.Label l;
@@ -343,6 +478,46 @@ public class Ast
       {
         v.visit(this);
       }
+    }
+    public static class NewIntArray extends T
+    {
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    }
+    
+    /*----------------------
+     * Before    |  After   |
+     * ---------------------
+     * value     |          |
+     * ---------------------
+     * objref    |          |
+     * ----------------------
+     * ...       |          |
+     * ---------------------*/
+    public static class Putfield extends T
+    {
+    	String classId;
+    	String id;
+    	Type.T type;
+    	
+    	public Putfield(String classId,String id,Type.T type)
+    	{
+    		this.classId=classId;
+    		this.id=id;
+    		this.type=type;
+    	}
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
     }
 
     public static class Print extends T
