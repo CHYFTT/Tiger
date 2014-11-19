@@ -17,7 +17,7 @@ public class ClassTable
   public void put(String c, ClassBinding cb)
   {
     if (this.table.get(c) != null) {
-      System.out.println("duplicated class: " + c+"at line:");
+      System.err.println("duplicated class: " + c+"at line:");
       System.exit(1);
     }
     this.table.put(c, cb);
@@ -54,7 +54,7 @@ public class ClassTable
   {
     ClassBinding cb = this.table.get(className);
     Type.T type = cb.fields.get(xid);
-    while (type == null) { // search all parent classes until found or fail
+    while (type == null) { // search all parent classes until found or fail！！
       if (cb.extendss == null)
         return type;
 

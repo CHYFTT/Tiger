@@ -4,7 +4,7 @@ public class Token
 {
 	static String isClass="";
 
-	static String  key[]={
+	/*static String  key[]={
 			"+",
 		    "&&",
 		     "=",
@@ -88,7 +88,7 @@ public class Token
 	    "TOKEN_TRUE", // "true"
 	    "TOKEN_VOID", // "void"
 	    "TOKEN_WHILE"// "while"
-			};
+			};*/
   // Lab 1, exercise 1: read the MiniJava specification
   // carefully, and answer these two questions:
   //   1. whether or not one should add other token kinds?
@@ -143,12 +143,13 @@ public class Token
     TOKEN_WHILE;
     // "while"
     
-    public static Kind valueOf(int ordinal) {
+  /*  public static Kind valueOf(int ordinal) {
         if (ordinal < 0 || ordinal >= values().length) {
             throw new IndexOutOfBoundsException("Invalid ordinal");
         }
         return values()[ordinal];
     }
+    */
     
  
     
@@ -193,18 +194,20 @@ public class Token
  
   public Kind getkey(String s)
   {
-	  int i;
 	  if(isNum(s))
 		  return Kind.TOKEN_NUM;
-	  for(i=0;i<key.length;i++)
+	  else 
 	  {
-		  if(s.equals(key[i]))
-			  return Kind.valueOf(i);
-			  
+		  TokenMap m=new TokenMap();
+		  Kind k=m.getKind(s);
+		  if(k!=null)
+			  return k;
 	  }
 	  
 	  return Kind.TOKEN_ID;
   }
+  
+  
 
   public static boolean isNum(String str){
 	   

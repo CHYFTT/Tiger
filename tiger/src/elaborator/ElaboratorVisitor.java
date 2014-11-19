@@ -54,23 +54,31 @@ public class ElaboratorVisitor implements ast.Visitor
     this.type = null;
     
   }
+  public enum Error
+  {
+	MISTYPE,
+	UNDECL,
+	RET;
+  }
 private void error()
 {
 	System.exit(1);
 }
-  private void error(int c,int linenum)
+  private void error(Error c,int linenum)
   {
 	  switch(c){
-	  case 1:
-		  System.out.println("error:type mismatch at line "+linenum);
+	  case MISTYPE:
+		  System.err.println("error:type mismatch at line "+linenum);
+		  System.err.println("need type:"+type.toString());
 		  System.exit(1);
 		  break;
-	  case 2:
-		  System.out.println("error:un decl var at line "+linenum);
+	  case UNDECL:
+		  System.err.println("error:un decl var at line "+linenum);
 		  System.exit(1);
 		  break;
-	  case 3:
-		  System.out.println("error:return val mis at line "+linenum);
+	  case RET:
+		  System.err.println("error:return val mis at line "+linenum);
+		  System.err.println("return type must be "+type.toString());
 		  System.exit(1);
 	  }
 	  
@@ -88,9 +96,9 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);								//不匹配
-	  if(!t.toString().equals("@int"))			//类型不对
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);								
+	  if(!t.toString().equals("@int"))			
+		  error(Error.MISTYPE,e.linenum);
 	  return;
 	  
   }
@@ -102,13 +110,21 @@ private void error()
 	  Type.T t=this.type;
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
 	  return;
   }
 
   @Override
   public void visit(ArraySelect e)
   {
+	  
+	  e.index.accept(this);
+	  if(!this.type.toString().equals("@int"))
+		  error(Error.MISTYPE,e.linenum);
+	  e.array.accept(this);
+	  //System.out.println(this.type.toString());
+	  
+	  return;
   }
 
   @Override
@@ -121,23 +137,71 @@ private void error()
     leftty = this.type;
     if (leftty instanceof ClassType) {
       ty = (ClassType) leftty;
-      e.type = ty.id;
+      e.type = ty.id;//将调用者的id记录
     } else
-      error(1,e.linenum);
-    MethodType mty = this.classTable.getm(ty.id, e.id);
+      error(Error.MISTYPE,e.linenum);
+    MethodType mty = this.classTable.getm(ty.id, e.id);//在Tree里面找accept
+    //收集call的所有参数的Type
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
     for (Exp.T a : e.args) {
       a.accept(this);
       argsty.addLast(this.type);
     }
+    //验证方法的参数个数是否匹配
     if (mty.argsType.size() != argsty.size())
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
+    //验证方法的参数类型是否匹配
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
-        ;
+    	  ;//如果相等
       else
-        error(1,e.linenum);
+      {//  如果不相等，有父类型的话，父类型和argsty匹配也可。
+    	  /*(不加这种情况的处理，会在Elab时直接报错mistype)
+    	   * 此时要比较的两个type必须是ClassType的实例。
+    	   * 因为Classbinding对象里面记录的extenss，通过classTable查看是否有父类
+    	   */
+    	  if(dec.type instanceof ClassType)
+    	  {
+    		  String currentcla=argsty.get(i).toString();
+    		  ClassBinding cb=this.classTable.get(currentcla);
+    		  boolean succ=false;
+    		  while(cb.extendss!=null)
+    		  {
+    			  if(cb.extendss.equals(dec.type.toString()))
+    			  {
+    				  succ=true;
+    				  break;
+    			  }
+    			  else
+    				  cb=this.classTable.get(cb.extendss);
+    		  }
+    		  if(succ)
+    			  ;
+    		  else
+    			  error(Error.MISTYPE,e.linenum);
+    	  }
+    	  else
+    		  error(Error.MISTYPE,e.linenum);
+    	  
+    	  
+    	  /* 更改call里面的参数列表的类型，之所以可以改变ast是因为在TransC时不需要Call.at，如果以后
+    	  * 有情况需要这个字段，可以在Ast.Call里面再加一个)
+    	  * 
+    	  * 循环将Call.at里面的类型全改为函数原型的类型
+    	  */
+    	  if(dec.type instanceof ClassType&&
+    			  argsty.get(i) instanceof ClassType)
+    	  {
+    		  for (int j = 0; j < argsty.size(); j++) 
+    		  {
+    		      Dec.DecSingle decc = (Dec.DecSingle) mty.argsType.get(j);
+    		      Type.ClassType tcc=(Type.ClassType)decc.type;
+    		      argsty.set(j, tcc);//通过e.at=argsty直接改变javaAst
+    		  }
+    	  }
+      }
+        			
     }
     this.type = mty.retType;
     e.at = argsty;
@@ -163,18 +227,22 @@ private void error()
       // useful in later phase.
       e.isField = true;
     }
+    //在上一步中已经遍历的所有的祖先！！！！
     if (type == null)
-      error(2,e.linenum);
+      error(Error.UNDECL,e.linenum);
     this.type = type;
     // record this type on this node for future use.
-    e.type = type;
+    e.type = type;//给这个id加上类型。
     return;
   }
 
   @Override
   public void visit(Length e)
   {
-	  this.type=new Type.IntArray();
+	  e.array.accept(this);
+	  
+	  this.type= new Type.Int();
+	  return;
   }
 
   @Override
@@ -184,7 +252,7 @@ private void error()
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     this.type = new Type.Boolean();
     return;
   }
@@ -194,7 +262,8 @@ private void error()
   {
 	  e.exp.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error(1,e.linenum);
+		  error(Error.MISTYPE,e.linenum);
+	  this.type=new Type.IntArray();
   }
 
   @Override
@@ -225,7 +294,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error(1,e.linenum);
+      error(Error.MISTYPE,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -244,7 +313,7 @@ private void error()
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-    	error(1,e.linenum);
+    	error(Error.MISTYPE,e.linenum);
     this.type = new Type.Int();
     return;
   }
@@ -263,32 +332,66 @@ private void error()
     Type.T type = this.methodTable.get(s.id);
     // if search failed, then s.id must
     if (type == null)
+    {
       type = this.classTable.get(this.currentClass, s.id);
+      s.isField=true;
+    }
+    
     if (type == null)
-    	error(2,s.linenum);
-    s.exp.accept(this);
-    //s.type = type;
-    if(!this.type.toString().equals(type.toString()))
-    	error(1,s.linenum);
+    	error(Error.UNDECL,s.linenum);
+    
+    s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
+    s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
+    					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
+    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+    {
+    	//type代表左边，this.type代表右边
+    	if(!this.type.toString().equals(type.toString()))
+    		error(Error.MISTYPE,s.linenum);
+    }
+    else//如果=右边是ArraySelect类型，那左边只能是int型。
+    {
+    	if(!type.toString().equals("@int"))
+    		error(Error.MISTYPE,s.linenum);
+    }
     return;
   }
 
   @Override
   public void visit(AssignArray s)
   {
-	  Type.T t=this.methodTable.get(s.id);
-	  if(t==null)
-		  t=this.classTable.get(this.currentClass, s.id);
-	  if(t==null)
-		  error(2,s.linenum);
+	  //先在本方法中找
+	  Type.T type=this.methodTable.get(s.id);
+	 //在类中找
+	  if(type==null)
+	  {
+		  type=this.classTable.get(this.currentClass, s.id);
+		  s.isField=true;
+		  
+	  }
+	  if(type==null)
+		  error(Error.UNDECL,s.linenum);
+	  s.tyep=type;
+	  //判断索引号
+	 // System.out.println(type.toString());// ---------------------------------------
 	  s.index.accept(this);
 	  if(!this.type.toString().equals("@int"))
-		  error(1,s.linenum);
-	  
+		  error(Error.UNDECL,s.linenum);
+	  //System.out.println("index finished.................");
+	  //判断id类型
 	  s.exp.accept(this);
-	  
+	 // System.out.println(s.exp.getClass().getName());
+	  if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+	  {
 		  if(!this.type.toString().equals("@int"))
-			  error(1,s.linenum);
+			  error(Error.MISTYPE,s.linenum);
+	  }
+	  else
+	  {
+		  if(!type.toString().equals("@int[]"))
+			  error(Error.MISTYPE,s.linenum);
+		  
+	  }
 	  
   }
 
@@ -304,7 +407,7 @@ private void error()
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-    	error(1,s.linenum);
+    	error(Error.MISTYPE,s.linenum);
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -314,8 +417,16 @@ private void error()
   public void visit(Print s)
   {
     s.exp.accept(this);
-    if (!this.type.toString().equals("@int"))
-    	error(1,s.linenum);
+    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
+    {
+    	if (!this.type.toString().equals("@int"))
+    		error(Error.MISTYPE,s.linenum);
+    }
+    else
+    {
+    	if (!this.type.toString().equals("@int[]"))
+    		error(Error.MISTYPE,s.linenum);
+    }
     return;
   }
 
@@ -324,7 +435,7 @@ private void error()
   {
 	  s.condition.accept(this);
 	  if(!this.type.toString().equals("@boolean"))
-		  error(1,s.linenum);
+		  error(Error.MISTYPE,s.linenum);
 	  s.body.accept(this);
 	  return;
   }
@@ -371,8 +482,7 @@ private void error()
   public void visit(Method.MethodSingle m)
   {
     // construct the method table
-	this.methodTable = new  MethodTable();//每一个方法有一张MethodTable，因为不同方法
-											//中的变量可以重名
+	this.methodTable = new  MethodTable();
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
@@ -380,7 +490,7 @@ private void error()
 
     for (Stm.T s : m.stms)
     {
-    	System.out.println("This is the Stm:"+s.linenum );
+    	System.out.println("This is the Stm:"+s.linenum+" is "+s.toString() );
     	s.accept(this);
     	linenum=s.linenum;
     }
@@ -392,7 +502,7 @@ private void error()
     	 //methodtype.retType==this.type
      {
     	 
-    	 error(3,linenum);
+    	 error(Error.RET,linenum);
      }
     return;
   }
@@ -402,6 +512,13 @@ private void error()
   public void visit(Class.ClassSingle c)
   {
     this.currentClass = c.id;
+    /*
+     * 在这里应该添加extendss的判断。
+     * 当继承了基类时，应该将基类的声明和方法拼接在这个子类
+     * 
+     * 当实现了继承特性之后，子类中可以用在基类中声明的变量。
+     * 可以用基类中的方法
+     */
 
     for (Method.T m : c.methods) {
     	MethodSingle mm = (MethodSingle) m;
@@ -418,9 +535,9 @@ private void error()
     this.currentClass = c.id;
     // "main" has an argument "arg" of type "String[]", but
     // one has no chance to use it. So it's safe to skip it...
-
-    for(Ast.Stm.T s:c.stm)
-    	s.accept(this);
+    
+    c.stm.accept(this);
+    
     return;
   }
 
@@ -439,8 +556,7 @@ private void error()
     //VarDecls
     for (Dec.T dec : c.decs) {
       Dec.DecSingle d = (Dec.DecSingle) dec;
-      this.classTable.put(c.id, d.id, d.type);//根据ClassSingle的id去找buildClass，
-		  										//根据结果将d的id与Type放入对应ClassBinding的field表中
+      this.classTable.put(c.id, d.id, d.type);
     }
     //Method
     for (Method.T method : c.methods) {
