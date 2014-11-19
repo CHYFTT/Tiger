@@ -601,7 +601,7 @@ public class Parser {
 		locals=parseVarDecls();
 		stms=parseStatements();
 		
-		eatToken(Kind.TOKEN_RETURN);
+		eatToken(Kind.TOKEN_RETURN);//MiniJava语法不支持return正在方法中间出现
 		retExp=parseExp();
 		eatToken(Kind.TOKEN_SEMI);
 

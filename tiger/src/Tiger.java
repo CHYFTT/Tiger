@@ -2,8 +2,11 @@ import static control.Control.ConAst.dumpAst;
 import static control.Control.ConAst.testFac;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PushbackInputStream;
 
 import ast.Ast.Program;
@@ -20,6 +23,7 @@ public class Tiger
   static InputStream fstream;
   PushbackInputStream f;
   public ast.Ast.Program.T theAst;
+  codegen.bytecode.Ast.Program.ProgramSingle bytecodeAst;
 
   // lex and parse
 public void lexAndParse(String fname)
@@ -221,7 +225,8 @@ public void lexAndParse(String fname)
       codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
       control.CompilerPass ppBytecodePass = new control.CompilerPass(
           "Bytecode printing", bytecodeAst, ppbc);
-      ppBytecodePass.doit();
+      ppBytecodePass.doit();//打印
+      this.bytecodeAst=(codegen.bytecode.Ast.Program.ProgramSingle)bytecodeAst;//为了在Runtime里面使用
       break;
     case C:
       codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
@@ -263,6 +268,92 @@ public void lexAndParse(String fname)
   public void link(String str)
   {
     // Your code here:
+	  //str是fname
+	  switch(control.Control.ConCodeGen.codegen)
+	  {
+	  case C:
+	  String command="gcc "+str+
+    		  ".c  runtime\\runtime.c "+"-o "+str+".exe";
+	  BufferedReader br=null;
+      String err=null;
+	  try 
+	  {
+		Process proC=Runtime.getRuntime().exec(command);
+		
+		br=new BufferedReader(new InputStreamReader(proC.getErrorStream()));
+		while((err=br.readLine())!=null)
+			{
+				System.out.println(err);
+			}
+		System.out.println("GCC complie finished...");
+		command=str+".exe";
+		System.out.println("Run "+command);
+		proC=Runtime.getRuntime().exec(command);
+		br=new BufferedReader(new InputStreamReader(proC.getInputStream()));
+		while((err=br.readLine())!=null)
+			{
+				System.out.println(err);
+			}
+		System.out.println("Execute finished...");
+	  } catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	  }
+	  break;
+	  case Bytecode:
+		  codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = 
+		  (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
+		  
+		  String command2="java -jar jasmin.jar test\\"+mainClass.id+".j";
+	      String err2=null;
+			try {
+				Process pro2=Runtime.getRuntime().exec(command2);
+				BufferedReader br2=new BufferedReader(
+						new InputStreamReader(pro2.getErrorStream()));
+				while((err2=br2.readLine())!=null)
+				{
+					System.out.println(err2);
+				}
+				
+				for(codegen.bytecode.Ast.Class.T c:bytecodeAst.classes)
+			      {//用jasmin汇编每一个J文件
+					codegen.bytecode.Ast.Class.ClassSingle cs=
+							(codegen.bytecode.Ast.Class.ClassSingle)c;
+			    	command2="java -jar jasmin.jar test\\"+cs.id+".j";
+			    	pro2=Runtime.getRuntime().exec(command2);
+			    	br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+			    	while((err2=br.readLine())!=null)
+			    	{
+			    		System.out.println(err2);
+			    	}
+			      
+			      }
+				System.out.println("Jasmin finished...");
+				command2="java "+mainClass.id;
+				System.out.println("Run "+mainClass.id+".class");
+				pro2=Runtime.getRuntime().exec(command2);
+				br=new BufferedReader(new InputStreamReader(pro2.getInputStream()));
+				while((err2=br.readLine())!=null)
+				{
+					System.out.println(err2);
+				}
+				br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+				while((err2=br.readLine())!=null)
+				{
+					System.err.println(err2);
+				}
+				System.out.println("Execute finished...");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+	      
+	      break;
+		  
+	default:
+		break;
+	  }
+	  
   }
 
   public void compileAndLink(String fname)

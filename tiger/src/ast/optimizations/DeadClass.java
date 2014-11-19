@@ -48,7 +48,6 @@ public class DeadClass implements ast.Visitor
   private ast.Ast.Class.T newClass;
   public Program.T program;
   
-  private HashSet<String> remove;
 
   public DeadClass()
   {
@@ -262,25 +261,27 @@ public class DeadClass implements ast.Visitor
   // method
   @Override
   public void visit(MethodSingle m)
-  {//声明
-//	  for(ast.Ast.Dec.T dec:m.locals)
-//	  {
-//		  ast.Ast.Dec.DecSingle decc=(ast.Ast.Dec.DecSingle)dec;
-//		  //如果是类型的声明
-//		  if(decc.type instanceof Type.ClassType)
-//		  {
-//			  if(this.worklist.contains(decc.type.toString()))
-//				  ;
-//			  else
-//			  {
-//				  this.worklist.add(decc.type.toString());
-//				  this.set.add(decc.type.toString());
-//			  }
-//		  }
-//	  }
+  {
+	  /*
+	   * 之所以要对formals，locals，ret都进行accept，只因为这里面可能含有
+	   * Exp.NewObject
+	   */
+	  //参数列表
+	  for(ast.Ast.Dec.T decf:m.formals)
+	  {
+		  ast.Ast.Dec.DecSingle decff=(ast.Ast.Dec.DecSingle)decf;
+		  decff.accept(this);
+	  }
+	  //声明
+	  for(ast.Ast.Dec.T dec:m.locals)
+	  {
+		  ast.Ast.Dec.DecSingle decc=(ast.Ast.Dec.DecSingle)dec;
+		  decc.accept(this);
+	  }
 	  //Stm
     for (Stm.T s : m.stms)
       s.accept(this);
+    //返回值
     m.retExp.accept(this);
     return;
   }
