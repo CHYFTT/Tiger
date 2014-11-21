@@ -278,7 +278,7 @@ public class Parser {
 			right=parseAndExp();
 			return new Exp.And(left, right,linenum);
 		}
-		return left;
+		return left;//new Exp.Lt(new Exp.Id("num"), new Exp.Num(1));
 	}
 
 	// Statement -> { Statement* }
@@ -601,7 +601,7 @@ public class Parser {
 		locals=parseVarDecls();
 		stms=parseStatements();
 		
-		eatToken(Kind.TOKEN_RETURN);//MiniJava语法不支持return正在方法中间出现
+		eatToken(Kind.TOKEN_RETURN);
 		retExp=parseExp();
 		eatToken(Kind.TOKEN_SEMI);
 

@@ -14,6 +14,8 @@ class Doit {
           System.out.println(1);
         else 
           System.out.println(0);
+        
+        x=0*8;
         return 0;
     }
 }

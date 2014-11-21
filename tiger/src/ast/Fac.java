@@ -78,7 +78,7 @@ public class Fac
 	          new util.Flist<Exp.T>().list(new Num(101,1)),1),1));
   
   
-  static ast.Ast.Class.T summ = new ast.Ast.Class.ClassSingle("Doit", null,
+  static ast.Ast.Class.T summ = new ast.Ast.Class.ClassSingle("Sum", null,
 	      new util.Flist<Dec.T>().list(),
 	      new util.Flist<Method.T>().list(new Method.MethodSingle(
 	          new Type.Int(), "doit", new util.Flist<Dec.T>()

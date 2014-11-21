@@ -331,13 +331,13 @@ public class DeadCode implements ast.Visitor
     this.program = new ast.Ast.Program.ProgramSingle(mainClass, classes);
 	 // this.program=p;
 
-   // if (control.Control.trace.equals("ast.DeadCode")){
+    if (control.Control.trace.equals("ast.DeadCode")){
       System.out.println("before optimization:");
       ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
       p.accept(pp);
       System.out.println("after optimization:");
       this.program.accept(pp);
-   // }
+    }
     return;
   }
 }

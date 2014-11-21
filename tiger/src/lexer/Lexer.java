@@ -3,6 +3,7 @@ package lexer;
 import static control.Control.ConLexer.dump;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PushbackInputStream;
 
 import lexer.Token.Kind;
@@ -211,7 +212,7 @@ public class Lexer {
 	}
 
 	public Token printTokenforspace(int c) throws IOException {
-		if (c == '&' && s == "&") {
+		if (c == 38 && s == "&") {
 			behind = new Token(Kind.TOKEN_AND, linenum);
 			s = "";
 		} else if (s != "") {
@@ -228,7 +229,7 @@ public class Lexer {
 				fstream.unread(c);
 			return behind;
 
-		} else if (s == "" && c == '&') {
+		} else if (s == "" && c == 38) {
 			s = "&";
 			behind = null;
 		} else

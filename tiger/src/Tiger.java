@@ -50,7 +50,7 @@ public void lexAndParse(String fname)
 
     // /////////////////////////////////////////////////////
     // to test the pretty printer on the "test/Fac.java" program
-    if (testFac) {
+   /* if (testFac) {
       System.out.println("Testing the Tiger compiler on Fac.java starting:");
       ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
       control.CompilerPass ppPass = new control.CompilerPass(
@@ -152,7 +152,7 @@ public void lexAndParse(String fname)
       }
       return;
     }
-
+*/
     if (fname == null) {
       cmd.usage();
       return;
@@ -213,6 +213,7 @@ public void lexAndParse(String fname)
    // optAstPass.doitName("doit");
     optAstPass.doit();
     theAst = optAstPasses.program;
+    
 
     // code generation
     switch (control.Control.ConCodeGen.codegen) {
@@ -233,11 +234,13 @@ public void lexAndParse(String fname)
       control.CompilerPass genCCodePass = new control.CompilerPass(
           "C code generation", theAst, transC);
       genCCodePass.doit();
+      //theAst.accept(transC);
       codegen.C.Ast.Program.T cAst = transC.program;
       codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
       control.CompilerPass ppCCodePass = new control.CompilerPass(
           "C code printing", cAst, ppc);
       ppCCodePass.doit();
+      //cAst.accept(ppc);
       break;
     case Dalvik:
       codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
@@ -257,12 +260,87 @@ public void lexAndParse(String fname)
     default:
       break;
     }
+    System.out.println("Compile finished...\n");
     return;
   }
 
   public void assemble(String str)
   {
     // Your code here: methods[i].invoke(this.obj, this.x);
+	// Your code here:
+		  //str是fname
+		  switch(control.Control.ConCodeGen.codegen)
+		  {
+		  case C:
+		  String command="gcc -c "+str+
+	    		  ".c -o "+str+".o";
+		  BufferedReader br=null;
+	      String err=null;
+		  try 
+		  {
+			Process proC=Runtime.getRuntime().exec(command);
+			
+			br=new BufferedReader(new InputStreamReader(proC.getErrorStream()));
+			while((err=br.readLine())!=null)
+				{
+					System.out.println(err);
+				}
+			
+			command="gcc -c runtime\\runtime.c "+"-o runtime.o";
+			
+			proC=Runtime.getRuntime().exec(command);
+			br=new BufferedReader(new InputStreamReader(proC.getErrorStream()));
+			while((err=br.readLine())!=null)
+			{
+				System.out.println(err);
+			}
+			System.out.println("GCC assemble finished...\n");
+			
+		  } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		  }
+		  break;
+		  case Bytecode:
+			  codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = 
+			  (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
+			  
+			  String command2="java -jar jasmin.jar test\\"+mainClass.id+".j";
+		      String err2=null;
+				try {
+					Process pro2=Runtime.getRuntime().exec(command2);
+					BufferedReader br2=new BufferedReader(
+							new InputStreamReader(pro2.getErrorStream()));
+					while((err2=br2.readLine())!=null)
+					{
+						System.out.println(err2);
+					}
+					
+					for(codegen.bytecode.Ast.Class.T c:bytecodeAst.classes)
+				      {//用jasmin汇编每一个J文件
+						codegen.bytecode.Ast.Class.ClassSingle cs=
+								(codegen.bytecode.Ast.Class.ClassSingle)c;
+				    	command2="java -jar jasmin.jar test\\"+cs.id+".j";
+				    	pro2=Runtime.getRuntime().exec(command2);
+				    	br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+				    	while((err2=br.readLine())!=null)
+				    	{
+				    		System.out.println(err2);
+				    	}
+				      
+				      }
+					System.out.println("Jasmin finished...\n");
+					
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+		      
+		      break;
+			  
+		default:
+			break;
+		  }
   }
 
   public void link(String str)
@@ -273,7 +351,7 @@ public void lexAndParse(String fname)
 	  {
 	  case C:
 	  String command="gcc "+str+
-    		  ".c  runtime\\runtime.c "+"-o "+str+".exe";
+    		  ".o   "+"runtime.o -o "+str+".exe";
 	  BufferedReader br=null;
       String err=null;
 	  try 
@@ -285,7 +363,7 @@ public void lexAndParse(String fname)
 			{
 				System.out.println(err);
 			}
-		System.out.println("GCC complie finished...");
+		System.out.println("GCC link finished...\n");
 		command=str+".exe";
 		System.out.println("Run "+command);
 		proC=Runtime.getRuntime().exec(command);
@@ -294,7 +372,7 @@ public void lexAndParse(String fname)
 			{
 				System.out.println(err);
 			}
-		System.out.println("Execute finished...");
+		System.out.println("Execute finished...\n");
 	  } catch (IOException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -304,34 +382,11 @@ public void lexAndParse(String fname)
 		  codegen.bytecode.Ast.MainClass.MainClassSingle mainClass = 
 		  (codegen.bytecode.Ast.MainClass.MainClassSingle)bytecodeAst.mainClass;
 		  
-		  String command2="java -jar jasmin.jar test\\"+mainClass.id+".j";
+		  String command2="java "+mainClass.id;
 	      String err2=null;
 			try {
-				Process pro2=Runtime.getRuntime().exec(command2);
-				BufferedReader br2=new BufferedReader(
-						new InputStreamReader(pro2.getErrorStream()));
-				while((err2=br2.readLine())!=null)
-				{
-					System.out.println(err2);
-				}
-				
-				for(codegen.bytecode.Ast.Class.T c:bytecodeAst.classes)
-			      {//用jasmin汇编每一个J文件
-					codegen.bytecode.Ast.Class.ClassSingle cs=
-							(codegen.bytecode.Ast.Class.ClassSingle)c;
-			    	command2="java -jar jasmin.jar test\\"+cs.id+".j";
-			    	pro2=Runtime.getRuntime().exec(command2);
-			    	br=new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
-			    	while((err2=br.readLine())!=null)
-			    	{
-			    		System.out.println(err2);
-			    	}
-			      
-			      }
-				System.out.println("Jasmin finished...");
-				command2="java "+mainClass.id;
 				System.out.println("Run "+mainClass.id+".class");
-				pro2=Runtime.getRuntime().exec(command2);
+				Process pro2=Runtime.getRuntime().exec(command2);
 				br=new BufferedReader(new InputStreamReader(pro2.getInputStream()));
 				while((err2=br.readLine())!=null)
 				{
@@ -358,17 +413,17 @@ public void lexAndParse(String fname)
 
   public void compileAndLink(String fname)
   {
-    // compile
+    // compile生成Ast
     control.CompilerPass compilePass = new control.CompilerPass("Compile",
         tiger, fname);
     compilePass.doitName("compile");
 
-    // assembling
+    // assembling生成.o   .j
     control.CompilerPass assemblePass = new control.CompilerPass("Assembling",
         tiger, fname);
     assemblePass.doitName("assemble");
 
-    // linking
+    // linking生成.c     .class
     control.CompilerPass linkPass = new control.CompilerPass("Linking", tiger,
         fname);
     linkPass.doitName("link");

@@ -34,7 +34,7 @@ public class Main
       algPass.doit();
       ast = algVisitor.program;
     }
-
+/*
     ConstFold cfVisitor = new ConstFold();
     control.CompilerPass constFoldPass = new control.CompilerPass(
         "Const folding", ast, cfVisitor);
@@ -43,6 +43,7 @@ public class Main
       constFoldPass.doit();
       ast = cfVisitor.program;
     }    
+    */
 
     program = ast;
     
