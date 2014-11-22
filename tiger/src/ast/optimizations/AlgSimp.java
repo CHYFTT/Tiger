@@ -493,13 +493,13 @@ public class AlgSimp implements ast.Visitor
     this.program=new ast.Ast.Program.ProgramSingle(mainClass, classes);
     
 
-  //  if (control.Control.trace.equals("ast.AlgSimp")){
+    if (control.Control.trace.equals("ast.AlgSimp")){
       System.out.println("before optimization:");
       ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
       p.accept(pp);
       System.out.println("after optimization:");
       this.program.accept(pp);
-  //  }
+    }
     return;
   }
 }

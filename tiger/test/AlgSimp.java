@@ -11,11 +11,11 @@ class Doit {
     	x = 999;
     	
         if ((x*0)<2)
-          System.out.println(1);
+          System.out.println(1+3);
         else 
           System.out.println(0);
         
-        x=0*8;
+        x=8+8;
         return 0;
     }
 }
