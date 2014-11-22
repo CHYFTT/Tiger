@@ -42,8 +42,18 @@ public class Main
     }else{
       constFoldPass.doit();
       ast = cfVisitor.program;
-    }   
+    }  
     
+    //可以再加一次DeadCode opt
+   /* DeadCode dcodeVisitor2 = new DeadCode();
+    control.CompilerPass deadCodePass2 = new control.CompilerPass(
+        "Dead code elimination", ast, dcodeVisitor2);
+    if (control.Control.skipPass("ast.DeadCode")){
+    }else{
+      deadCodePass2.doit();
+      ast = dcodeVisitor2.program;
+    }
+    */
     
 
     program = ast;

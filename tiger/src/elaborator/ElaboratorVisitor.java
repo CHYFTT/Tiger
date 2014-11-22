@@ -111,6 +111,8 @@ private void error()
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
 		  error(Error.MISTYPE,e.linenum);
+	  if(!t.toString().equals("@boolean"))
+		  error(Error.MISTYPE,e.linenum);//&&两边必须为&&
 	  return;
   }
 

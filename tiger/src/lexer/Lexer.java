@@ -3,7 +3,6 @@ package lexer;
 import static control.Control.ConLexer.dump;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PushbackInputStream;
 
 import lexer.Token.Kind;

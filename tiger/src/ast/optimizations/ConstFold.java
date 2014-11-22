@@ -81,7 +81,6 @@ public class ConstFold implements ast.Visitor
 	  if((left instanceof ast.Ast.Exp.Num)
 			  &&(right instanceof ast.Ast.Exp.Num))
 	  {
-		  System.out.println("+++++++++++++++++++==");
 		  ast.Ast.Exp.Num leftt=(ast.Ast.Exp.Num)e.left;
 		  ast.Ast.Exp.Num rightt=(ast.Ast.Exp.Num)e.right;
 		  int num=leftt.num+rightt.num;
@@ -98,7 +97,39 @@ public class ConstFold implements ast.Visitor
   public void visit(And e)
   {
 	  //。。。。。。。。。。。。。。。。。。。。。。。。
-	  this.exp=e;
+	  boolean leftt,rightt;
+	  ast.Ast.Exp.T left;
+	  ast.Ast.Exp.T right;
+	  e.left.accept(this);
+	  left=this.exp;
+	  e.right.accept(this);
+	  right=this.exp;
+//	  System.out.println(left.toString());
+//	  System.out.println(right.toString());
+	  if(((left instanceof ast.Ast.Exp.True)||
+			  (left instanceof ast.Ast.Exp.False))&&
+			  ((right instanceof ast.Ast.Exp.True)||
+					  (right instanceof ast.Ast.Exp.False)))
+	  {
+		  if(left instanceof ast.Ast.Exp.True)
+			   leftt = true;
+		  else
+			  leftt=false;
+		  if(right instanceof ast.Ast.Exp.True)
+			  rightt=true;
+		  else
+			  rightt=false;
+		  
+		  if(leftt&&rightt)
+			  this.exp=new ast.Ast.Exp.True(e.linenum);
+		  else
+			  this.exp=new ast.Ast.Exp.False(e.linenum);
+			  
+		
+	  }
+	  else
+		  
+	  this.exp=new ast.Ast.Exp.And(left, right, e.linenum);
 	  return;
   }
 
@@ -158,7 +189,6 @@ public class ConstFold implements ast.Visitor
   @Override
   public void visit(Lt e)
   {
-	  System.out.println("<<<<<<<<<<<<<<<<<<<<<<");
 	  ast.Ast.Exp.T left,right;
 	  e.left.accept(this);
 	  left=this.exp;
@@ -202,8 +232,19 @@ public class ConstFold implements ast.Visitor
 	  ast.Ast.Exp.T exp;
 	  e.exp.accept(this);
 	  exp=this.exp;
-	  
-	  this.exp=new ast.Ast.Exp.Not(exp, e.linenum);
+	  System.out.println(exp);
+	  if(exp instanceof ast.Ast.Exp.True)
+	  {
+		  this.exp=new ast.Ast.Exp.False(e.linenum);
+		  return;
+	  }
+	  else if(exp instanceof ast.Ast.Exp.False)
+	  {
+		  this.exp=new ast.Ast.Exp.True(e.linenum);
+		  return;
+	  }
+	  else
+		  this.exp=new ast.Ast.Exp.Not(exp, e.linenum);
 	  return;
   }
 
@@ -435,7 +476,6 @@ public class ConstFold implements ast.Visitor
   {
     
  // You should comment out this line of code:
-    //this.program = p;
 	 
 	  p.mainClass.accept(this);
 	  
