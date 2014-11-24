@@ -10,10 +10,16 @@ import cfg.Cfg.Operand.Var;
 import cfg.Cfg.Program;
 import cfg.Cfg.Program.ProgramSingle;
 import cfg.Cfg.Stm.Add;
+import cfg.Cfg.Stm.And;
+import cfg.Cfg.Stm.ArraySelect;
+import cfg.Cfg.Stm.AssignArray;
 import cfg.Cfg.Stm.InvokeVirtual;
+import cfg.Cfg.Stm.Length;
 import cfg.Cfg.Stm.Lt;
 import cfg.Cfg.Stm.Move;
+import cfg.Cfg.Stm.NewIntArray;
 import cfg.Cfg.Stm.NewObject;
+import cfg.Cfg.Stm.Not;
 import cfg.Cfg.Stm.Print;
 import cfg.Cfg.Stm.Sub;
 import cfg.Cfg.Stm.Times;
@@ -160,5 +166,41 @@ public class Cse implements cfg.Visitor
   {
     this.program = p;
   }
+
+@Override
+public void visit(And m) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void visit(ArraySelect m) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void visit(Length m) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void visit(NewIntArray m) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void visit(Not m) {
+	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void visit(AssignArray m) {
+	// TODO Auto-generated method stub
+	
+}
 
 }

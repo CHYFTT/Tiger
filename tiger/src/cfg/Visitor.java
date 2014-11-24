@@ -9,9 +9,13 @@ import cfg.Cfg.Operand.Int;
 import cfg.Cfg.Operand.Var;
 import cfg.Cfg.Program.ProgramSingle;
 import cfg.Cfg.Stm.Add;
+import cfg.Cfg.Stm.And;
+import cfg.Cfg.Stm.ArraySelect;
 import cfg.Cfg.Stm.InvokeVirtual;
+import cfg.Cfg.Stm.Length;
 import cfg.Cfg.Stm.Lt;
 import cfg.Cfg.Stm.Move;
+import cfg.Cfg.Stm.*;
 import cfg.Cfg.Stm.NewObject;
 import cfg.Cfg.Stm.Print;
 import cfg.Cfg.Stm.Sub;
@@ -82,4 +86,16 @@ public interface Visitor
 
   // program
   public void visit(ProgramSingle p);
+
+public void visit(And m);
+
+public void visit(ArraySelect m);
+
+public void visit(Length m);
+
+public void visit(NewIntArray m);
+
+public void visit(Not m);
+
+public void visit(AssignArray m);
 }

@@ -129,10 +129,19 @@ public class Cfg
     public static class Var extends T
     {
       public String id;
+      public boolean isField;
 
+      
       public Var(String id)
       {
-        this.id = id;
+    	  this.id=id;
+    	  this.isField=false;
+      }
+      
+      public Var(String id,boolean isField)
+      {
+    	  this.id=id;
+    	  this.isField=isField;
       }
 
       @Override
@@ -174,6 +183,73 @@ public class Cfg
         v.visit(this);
       }
     }
+    
+    public static class And extends T
+    {
+    	public String dst;
+    	public Operand.T left;
+    	public Operand.T right;
+    	
+		public And(String dst, Operand.T left, Operand.T right) {
+			this.dst = dst;
+			this.left = left;
+			this.right = right;
+		}
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    }
+    
+    public static class ArraySelect extends T
+    {
+    	public String id;
+    	public Operand.T array;
+    	public Operand.T index;
+    	
+		public ArraySelect(String id, cfg.Cfg.Operand.T array,
+				cfg.Cfg.Operand.T index) {
+			this.id = id;
+			this.array = array;
+			this.index = index;
+		}
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    }
+    
+    public static class AssignArray extends T
+    {
+    	public String dst;
+    	public Operand.T index;
+    	public Operand.T exp;
+    	public boolean isField;
+    	/*
+    	 * 这个isField字段需要自己添加。也是为了输出类似this->number[0]的形式
+    	 */
+    	
+		public AssignArray(String dst, cfg.Cfg.Operand.T index,
+				cfg.Cfg.Operand.T exp,boolean isField) {
+			this.dst = dst;
+			this.index = index;
+			this.exp = exp;
+			this.isField=isField;
+		}
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+		}
+		
+		
+    	
+    	
+    }
 
     public static class InvokeVirtual extends T
     {
@@ -197,6 +273,25 @@ public class Cfg
       {
         v.visit(this);
       }
+    }
+    
+    public static class Length extends T
+    {
+    	public String dst;
+    	public Operand.T array;
+    	
+    	
+		public Length(String dst, cfg.Cfg.Operand.T array) {
+			super();
+			this.dst = dst;
+			this.array = array;
+		}
+
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+		}
     }
 
     public static class Lt extends T
@@ -228,12 +323,15 @@ public class Cfg
       // type of the destination variable
       public Type.T ty;
       public Operand.T src;
+      
+      public boolean isField;
 
-      public Move(String dst, Type.T ty, Operand.T src)
+      public Move(String dst, Type.T ty, Operand.T src,boolean isField)
       {
         this.dst = dst;
         this.ty = ty;
         this.src = src;
+        this.isField=isField;
       }
 
       @Override
@@ -241,6 +339,48 @@ public class Cfg
       {
         v.visit(this);
       }
+    }
+    
+    public static class Not extends T
+    {
+    	public String dst;
+    	public Operand.T exp;
+    	
+    	
+		public Not(String dst, cfg.Cfg.Operand.T exp) {
+			this.dst = dst;
+			this.exp = exp;
+		}
+
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    	
+    }
+    
+    public static class NewIntArray extends T
+    {
+    	public String dst;
+    	public Operand.T exp;
+    	
+    	
+		public NewIntArray(String dst, cfg.Cfg.Operand.T exp) {
+			this.dst = dst;
+			this.exp = exp;
+		}
+
+
+		@Override
+		public void accept(Visitor v) {
+			v.visit(this);
+			
+		}
+    	
+    	
     }
 
     public static class NewObject extends T
@@ -458,9 +598,9 @@ public class Cfg
       public LinkedList<Dec.T> formals;
       public LinkedList<Dec.T> locals;
       public LinkedList<Block.T> blocks;
-      public util.Label entry;
-      public util.Label exit;
-      public Operand.T retValue;
+      public util.Label entry;//block的第一个label
+      public util.Label exit;//?
+      public Operand.T retValue;//?
 
       public MethodSingle(Type.T retType, String id, String classId,
           LinkedList<Dec.T> formals, LinkedList<Dec.T> locals,

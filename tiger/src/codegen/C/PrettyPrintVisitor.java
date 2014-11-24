@@ -118,7 +118,7 @@ public class PrettyPrintVisitor implements Visitor
 	   * 在这里面与jasmin不同的是，C语言的调用不需要输出调用函数的参数
 	   */
     this.say("(" + e.assign + "=");
-    e.exp.accept(this);
+    e.exp.accept(this);//n=this->r
     this.say(", ");
     this.say(e.assign + "->vptr->" + e.id + "(" + e.assign);
     int size = e.args.size();
@@ -335,7 +335,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArray t)
   {
-	  this.say("int* ");
+	  this.say("int* ");//貌似没用
   }
 
   // dec

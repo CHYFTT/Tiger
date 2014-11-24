@@ -50,7 +50,7 @@ public void lexAndParse(String fname)
 
     // /////////////////////////////////////////////////////
     // to test the pretty printer on the "test/Fac.java" program
-   /* if (testFac) {
+    if (testFac) {
       System.out.println("Testing the Tiger compiler on Fac.java starting:");
       ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
       control.CompilerPass ppPass = new control.CompilerPass(
@@ -152,7 +152,7 @@ public void lexAndParse(String fname)
       }
       return;
     }
-*/
+
     if (fname == null) {
       cmd.usage();
       return;
@@ -240,6 +240,21 @@ public void lexAndParse(String fname)
       control.CompilerPass ppCCodePass = new control.CompilerPass(
           "C code printing", cAst, ppc);
       ppCCodePass.doit();
+      
+      
+//      cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
+//      control.CompilerPass genCfgCodePass = new control.CompilerPass(
+//          "Control-flow graph generation", cAst, transCfg);
+//      genCfgCodePass.doit();
+//      cfg.Cfg.Program.T cfgAst = transCfg.program;
+//      
+//      cfg.PrettyPrintVisitor toDot = new cfg.PrettyPrintVisitor();
+//      control.CompilerPass genDotPass = new control.CompilerPass(
+//          "Draw control-flow graph", cfgAst, toDot);
+//      genDotPass.doit();
+      
+      
+      
       //cAst.accept(ppc);
       break;
     case Dalvik:

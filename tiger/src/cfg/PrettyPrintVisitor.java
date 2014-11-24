@@ -15,10 +15,16 @@ import cfg.Cfg.Operand.Var;
 import cfg.Cfg.Program.ProgramSingle;
 import cfg.Cfg.Stm;
 import cfg.Cfg.Stm.Add;
+import cfg.Cfg.Stm.And;
+import cfg.Cfg.Stm.ArraySelect;
+import cfg.Cfg.Stm.AssignArray;
 import cfg.Cfg.Stm.InvokeVirtual;
+import cfg.Cfg.Stm.Length;
 import cfg.Cfg.Stm.Lt;
 import cfg.Cfg.Stm.Move;
+import cfg.Cfg.Stm.NewIntArray;
 import cfg.Cfg.Stm.NewObject;
+import cfg.Cfg.Stm.Not;
 import cfg.Cfg.Stm.Print;
 import cfg.Cfg.Stm.Sub;
 import cfg.Cfg.Stm.Times;
@@ -73,7 +79,10 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Var operand)
   {
-    this.say(operand.id);
+	  if(operand.isField==false)
+		  this.say(operand.id);
+	  else
+		  this.say("this->"+operand.id);
   }
 
   // statements
@@ -118,11 +127,24 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Move s)
   {
+//	  if(!(s.ty instanceof cfg.Cfg.Type.IntArrayType))
+//	  {
     this.printSpaces();
-    this.say(s.dst + " = ");
+    if(s.isField==false)
+    	this.say(s.dst + " = ");
+    else
+    	this.say("this->"+s.dst+" = ");
     s.src.accept(this);
     this.say(";");
     return;
+//	  }
+//	  else
+//	  {
+//	  this.say("(int*)Tiger_new_array(");
+//	  s.src.accept(this);
+//	  this.say(")");
+//	  return;
+//	  }
   }
 
   @Override
@@ -219,6 +241,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArrayType t)
   {
+	  this.say("int* ");//????
   }
 
   // dec
@@ -234,12 +257,14 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(BlockSingle b)
   {
+	  this.sayln("\n//this is block");
     this.say(b.label.toString()+":\n");
     for (Stm.T s: b.stms){
       s.accept(this);
       this.say("\n");
     }
     b.transfer.accept(this);
+    this.sayln("//this is block  end\n");
     return;
   }
 
@@ -301,15 +326,29 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(VtableSingle v)
   {
-    this.sayln("struct " + v.id + "_vtable");
-    this.sayln("{");
-    for (cfg.Ftuple t : v.ms) {
-      this.say("  ");
-      t.ret.accept(this);
-      this.sayln(" (*" + t.id + ")();");
-    }
-    this.sayln("};\n");
-    return;
+	  this.sayln("struct " + v.id + "_vtable");
+	    this.sayln("{");
+	    for (cfg.Ftuple t : v.ms) {
+	      this.say("  ");
+	      t.ret.accept(this);//方法的返回值
+	      this.say(" (*" + t.id + ")(");//方法名+参数
+	      int size=t.args.size();
+	      
+	      for(Dec.T d:t.args)
+	      {
+	    	  DecSingle dd=(DecSingle)d;
+	    	  dd.type.accept(this);
+	    	  this.say(" " + dd.id);
+	    	  size--;
+	    	  if(size>0)
+	    		  this.say(",");
+	      }
+	      
+	      this.sayln(");");
+	    }
+	    
+	    this.sayln("};\n");
+	    return;
   }
 
   private void outputVtable(VtableSingle v)
@@ -377,9 +416,21 @@ public class PrettyPrintVisitor implements Visitor
     }
     this.sayln("");
 
-    this.sayln("// methods");
-    for (Method.T m : p.methods) {
-      m.accept(this);
+    this.sayln("//methods decl");//方法声明
+    for (Method.T mm : p.methods) {
+    	MethodSingle m=(MethodSingle)mm;
+    	m.retType.accept(this);//处理返回值
+        this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
+        int size = m.formals.size();
+        for (Dec.T d : m.formals) {//参数列表
+          DecSingle dec = (DecSingle) d;
+          size--;
+          dec.type.accept(this);//声明的类型， int num_aux;
+          this.say(" " + dec.id);//声明的ID
+          if (size > 0)
+            this.say(", ");
+        }
+        this.sayln(");");
     }
     this.sayln("");
 
@@ -388,7 +439,18 @@ public class PrettyPrintVisitor implements Visitor
       outputVtable((VtableSingle) v);
     }
     this.sayln("");
+    
+    
+    this.sayln("// methods");
+    for (Method.T m : p.methods) {//方法的定义------在方法定义以前，就应该初始化虚函数表
+    							//但是，虚函数表的初始化又需要方法名，所以在方法定义之前，
+    							//应该先声明方法
+      m.accept(this);
+    }
+    this.sayln("");
 
+    
+    
     this.sayln("// main method");
     p.mainMethod.accept(this);
     this.sayln("");
@@ -403,5 +465,78 @@ public class PrettyPrintVisitor implements Visitor
     }
 
   }
+
+@Override
+public void visit(And m) {
+	this.printSpaces();
+	this.say(m.dst+" = ");
+	m.left.accept(this);
+	this.say(" && ");
+	m.right.accept(this);
+	this.sayln(";");
+	return;
+
+	
+}
+
+@Override
+//array[index]
+public void visit(ArraySelect m) {
+	this.printSpaces();
+	this.say(m.id+" = ");
+	m.array.accept(this);
+	this.say("[");
+	m.index.accept(this);
+	this.say("]");
+	this.sayln(";");
+	return;
+}
+
+@Override
+public void visit(Length m) {
+	this.printSpaces();
+	this.say(m.dst+" = ");
+	m.array.accept(this);
+	this.say("[-1]");//注意
+	this.sayln(";");
+}
+
+@Override//new int[index]
+public void visit(NewIntArray m) {
+	this.printSpaces();
+	this.say(m.dst + " = (int*)Tiger_new_array(");
+	m.exp.accept(this);
+	this.say(")");
+	this.sayln(";");
+	return;
+	
+}
+
+@Override
+public void visit(Not m) {
+	this.printSpaces();
+	this.say(m.dst+" = !");
+	m.exp.accept(this);
+	this.sayln(";");
+	return;
+}
+
+@Override// id[index]=exp;
+public void visit(AssignArray m) {
+	this.printSpaces();
+	if(m.isField==false)
+		this.say(m.dst+"[");
+	else
+		this.say("this->"+m.dst+"[");
+	m.index.accept(this);
+	/*
+	 * index已经变成了一个x_形式的编号
+	 * 在AssignArray之前已经emit了index与exp的语句,在Tanslate里面做的
+	 */
+		this.say("]=");
+		m.exp.accept(this);
+		this.sayln(";");
+		return;
+}
 
 }
