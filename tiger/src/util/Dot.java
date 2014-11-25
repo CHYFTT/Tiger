@@ -46,7 +46,7 @@ public class Dot
   {
 
     String s = "[label=\"" + info + "\"]";
-    // System.out.println(s);
+//     System.out.println(s);
     this.list.addFirst(new DotElement<String, String, String>(from, to, s));
   }
 
@@ -148,12 +148,12 @@ public class Dot
       new Thread(new StreamDrainer(process.getErrorStream())).start();
       process.getOutputStream().close();
       int exitValue = process.waitFor();
-      if (!control.Control.ConAst.dumpDot) {
-        if (new File(name + ".dot").delete())
-          ;
-        else
-          throw new Throwable();
-      }
+//      if (!control.Control.ConAst.dumpDot) {
+//        if (new File(name + ".dot").delete())
+//          ;
+//        else
+//          throw new Throwable();
+//      }
     } catch (Throwable o) {
       o.printStackTrace();
     }

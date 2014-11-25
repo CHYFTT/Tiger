@@ -3,6 +3,7 @@ package cfg;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import util.Bug;
 import cfg.Cfg.Block;
 import cfg.Cfg.Block.BlockSingle;
 import cfg.Cfg.Class;
@@ -91,11 +92,20 @@ public class TranslateVisitor implements codegen.C.Visitor
       //将语句放入stm链表
       while (i < size && this.stmOrTransfer.get(i) instanceof Stm.T) {
         stms.add((Stm.T) this.stmOrTransfer.get(i++));
-      }
+      }//不再是Stm
+      //可能是tansfer或者是lable
       //tansfer是blockSingle的结尾
-      transfer = (Transfer.T) this.stmOrTransfer.get(i++);
-      b = new BlockSingle(label, stms, transfer);
-      blocks.add(b);
+      if(this.stmOrTransfer.get(i) instanceof Transfer.T)
+      {
+    	  transfer = (Transfer.T) this.stmOrTransfer.get(i++);
+    	  b = new BlockSingle(label, stms, transfer);
+    	  blocks.add(b);
+      }
+      else
+      {
+    	  Bug.error(Bug.Error.COOKBLOCK);
+      }
+    	  
     }
     //每次执行的最后刷新stmOrTransfer
     this.stmOrTransfer = new java.util.ArrayList<Object>();
@@ -205,6 +215,7 @@ public class TranslateVisitor implements codegen.C.Visitor
   public void visit(codegen.C.Ast.Exp.Id e)
   {
     this.operand = new Var(e.id,e.isField);
+    //在处理Id时，给Var加一个isField
     return;
   }
 
@@ -233,10 +244,20 @@ public class TranslateVisitor implements codegen.C.Visitor
   @Override
   public void visit(codegen.C.Ast.Exp.NewIntArray e)
   {
-	  //new int[exp]不需要产生新的dst
 	  e.exp.accept(this);
 	  Operand.T exp=this.operand;
+	  /*
+	   * NewIntArray也是一个Exp
+	   * 比如 array=new int[10-1];
+	   * 
+	   * a=10-1;
+	   * int* b=new int[a];(b会提前声明)
+	   * array=b;
+	   */
 	  String dst=genVar(new cfg.Cfg.Type.IntArrayType());
+	  /*
+	   * 这一条语句就做到了提前声明int* b；且把dst变为b
+	   */
 	  emit(new cfg.Cfg.Stm.NewIntArray(dst, exp));
 	  this.operand=new Var(dst);
   }
@@ -358,7 +379,12 @@ public class TranslateVisitor implements codegen.C.Visitor
 	  util.Label end=new util.Label();
 	  util.Label body=new util.Label();
 	  
-	  emit(new cfg.Cfg.Transfer.Goto(start));
+	  emit(new cfg.Cfg.Transfer.Goto(start));//加这一个Goto是为了让cookBlock通过
+	  /*
+	   * 一个小block会以lable开头，以transfor结尾
+	   *  但是while必须在一开始加一个label，到时候gaoto回来，所以就出现了
+	   *  两个label之间没有transfor的情况
+	   */
 	  emit(start);
 	  s.condition.accept(this);
 	  emit(new cfg.Cfg.Transfer.If(this.operand, body, end));

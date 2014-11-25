@@ -204,6 +204,7 @@ public class VisualVisitor implements Visitor
   @Override
   public void visit(BlockSingle b)
   {
+	  emit("hahahahaha");
 
     return;
   }
@@ -219,21 +220,27 @@ public class VisualVisitor implements Visitor
       map.put(label, b);
     }
 
+    //初始化图
     util.Graph<Block.T> graph = new util.Graph<Block.T>(m.classId + "_"
         + m.id);
 
+    //遍历block，把所有节点加入图
     for (Block.T block : m.blocks) {
       graph.addNode(block);
     }
+    //再次遍历block
     for (Block.T block : m.blocks) {
       BlockSingle b = (BlockSingle) block;
       Transfer.T transfer = b.transfer;
       if (transfer instanceof Transfer.Goto) {
         Transfer.Goto gotoo = (Transfer.Goto) transfer;
+        //因为map的key是label，所以用label获取目标节点
         Block.T to = map.get(gotoo.label);
+        //加入边
         graph.addEdge(block, to);
       } else if (transfer instanceof Transfer.If) {
         Transfer.If iff = (If) transfer;
+        //if的then和else都是label类型，都表示目的节点
         Block.T truee = map.get(iff.truee);
         graph.addEdge(block, truee);
         Block.T falsee = map.get(iff.falsee);

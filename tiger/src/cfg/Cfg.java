@@ -130,6 +130,7 @@ public class Cfg
     {
       public String id;
       public boolean isField;
+      //也要加上isField字段。这个对应于C里面的Id的isField
 
       
       public Var(String id)
@@ -569,7 +570,20 @@ public class Cfg
         StringBuffer strb = new StringBuffer();
         strb.append(this.label.toString() + ":\\n");
         // Lab5. Your code here:
-        strb.append("Your code here:\\n");
+        /*
+         * Stm应该是没有必要在控制流图里面显示。
+         */
+     /*   for(cfg.Cfg.Stm.T s:this.stms)
+        {
+        	VisualVisitor v=new VisualVisitor();
+        	s.accept(v);
+        	strb.append(v.strb.toString()+"\n");
+        }
+        */
+        
+        VisualVisitor vv=new VisualVisitor();
+        this.transfer.accept(vv);
+        strb.append(vv.strb.toString()+"\n");
 
         return strb.toString();
       }
@@ -725,10 +739,10 @@ public class Cfg
 
     public static class ProgramSingle extends T
     {
-      public LinkedList<Class.T> classes;
-      public LinkedList<Vtable.T> vtables;
-      public LinkedList<Method.T> methods;
-      public MainMethod.T mainMethod;
+      public LinkedList<Class.T> classes;//类的声明
+      public LinkedList<Vtable.T> vtables;//虚方法
+      public LinkedList<Method.T> methods;//方法
+      public MainMethod.T mainMethod;//main函数
 
       public ProgramSingle(LinkedList<Class.T> classes,
           LinkedList<Vtable.T> vtables, LinkedList<Method.T> methods,

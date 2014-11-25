@@ -242,16 +242,23 @@ public void lexAndParse(String fname)
       ppCCodePass.doit();
       
       
-//      cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
-//      control.CompilerPass genCfgCodePass = new control.CompilerPass(
-//          "Control-flow graph generation", cAst, transCfg);
-//      genCfgCodePass.doit();
-//      cfg.Cfg.Program.T cfgAst = transCfg.program;
-//      
-//      cfg.PrettyPrintVisitor toDot = new cfg.PrettyPrintVisitor();
-//      control.CompilerPass genDotPass = new control.CompilerPass(
-//          "Draw control-flow graph", cfgAst, toDot);
-//      genDotPass.doit();
+      cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
+      control.CompilerPass genCfgCodePass = new control.CompilerPass(
+          "Control-flow graph generation", cAst, transCfg);
+      genCfgCodePass.doit();
+      cfg.Cfg.Program.T cfgAst = transCfg.program;
+      
+      cfg.PrettyPrintVisitor toDot = new cfg.PrettyPrintVisitor();
+      control.CompilerPass genDotPass = new control.CompilerPass(
+          "Draw control-flow graph", cfgAst, toDot);
+      genDotPass.doit();
+      
+      if (control.Control.visualize != Control.Visualize_Kind_t.None) {
+          cfg.VisualVisitor toDotv = new cfg.VisualVisitor();
+          control.CompilerPass genDotPassv = new control.CompilerPass(
+              "Draw control-flow graph", cfgAst, toDotv);
+          genDotPassv.doit();
+        }
       
       
       
@@ -312,7 +319,6 @@ public void lexAndParse(String fname)
 			System.out.println("GCC assemble finished...\n");
 			
 		  } catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		  }
 		  break;
@@ -347,7 +353,6 @@ public void lexAndParse(String fname)
 					System.out.println("Jasmin finished...\n");
 					
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 		      
@@ -389,7 +394,6 @@ public void lexAndParse(String fname)
 			}
 		System.out.println("Execute finished...\n");
 	  } catch (IOException e) {
-		// TODO Auto-generated catch block
 		e.printStackTrace();
 	  }
 	  break;
@@ -414,7 +418,6 @@ public void lexAndParse(String fname)
 				}
 				System.out.println("Execute finished...");
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 	      

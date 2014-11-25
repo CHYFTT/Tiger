@@ -497,7 +497,7 @@ public void visit(Length m) {
 	this.printSpaces();
 	this.say(m.dst+" = ");
 	m.array.accept(this);
-	this.say("[-1]");//注意
+	this.say("[-1]");//这个地方特殊处理一下，上面一句只能输出this->number
 	this.sayln(";");
 }
 
@@ -505,7 +505,7 @@ public void visit(Length m) {
 public void visit(NewIntArray m) {
 	this.printSpaces();
 	this.say(m.dst + " = (int*)Tiger_new_array(");
-	m.exp.accept(this);
+	m.exp.accept(this);//exp就是index的operand,提前已经打印出来了
 	this.say(")");
 	this.sayln(";");
 	return;
