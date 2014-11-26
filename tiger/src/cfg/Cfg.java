@@ -124,6 +124,13 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=String.valueOf(i);
+    	  return s;
+      }
     }
 
     public static class Var extends T
@@ -149,6 +156,13 @@ public class Cfg
       public void accept(Visitor v)
       {
         v.visit(this);
+      }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=id;
+    	  return s;
       }
     }
 
@@ -183,6 +197,14 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+ " = "+left.toString()+" + "+right.toString()+";";
+		return s;
+    	  
+      }
     }
     
     public static class And extends T
@@ -200,6 +222,12 @@ public class Cfg
 		public void accept(Visitor v) {
 			v.visit(this);
 			
+		}
+		public String toString()
+		{
+			String s;
+			s=dst+ " = "+left.toString()+" && "+right.toString()+";";
+			return s;
 		}
     }
     
@@ -220,6 +248,13 @@ public class Cfg
 		public void accept(Visitor v) {
 			v.visit(this);
 			
+		}
+		
+		public String toString()
+		{
+			String s;
+			s=id+ " = "+array.toString()+" [ "+index.toString()+"];";
+			return s;
 		}
     	
     }
@@ -246,7 +281,12 @@ public class Cfg
 		public void accept(Visitor v) {
 			v.visit(this);
 		}
-		
+		public String toString()
+		{
+			String s;
+			s=dst+ "["+index.toString()+"]= "+exp.toString()+";";
+			return s;
+		}
 		
     	
     	
@@ -274,6 +314,14 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+		{
+			String s;
+			s=dst+ " = "+obj.toString()+"->vptr->"+f.toString()+"("+
+			obj.toString()+args.toString()+");";
+			return s;
+		}
     }
     
     public static class Length extends T
@@ -292,6 +340,12 @@ public class Cfg
 		@Override
 		public void accept(Visitor v) {
 			v.visit(this);
+		}
+		public String toString()
+		{
+			String s;
+			s=dst+" = "+array.toString()+"[-1];";
+			return s;
 		}
     }
 
@@ -315,6 +369,13 @@ public class Cfg
       public void accept(Visitor v)
       {
         v.visit(this);
+      }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+" = "+left.toString()+"<"+right.toString()+";";
+    	  return s;
       }
     }
 
@@ -340,6 +401,12 @@ public class Cfg
       {
         v.visit(this);
       }
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+" = "+src.toString();
+    	  return s;
+      }
     }
     
     public static class Not extends T
@@ -358,6 +425,12 @@ public class Cfg
 		public void accept(Visitor v) {
 			v.visit(this);
 			
+		}
+		public String toString()
+		{
+			String s;
+			s=dst+" =! "+exp.toString();
+			return s;
 		}
     	
     	
@@ -380,6 +453,13 @@ public class Cfg
 			v.visit(this);
 			
 		}
+		
+		public String toString()
+		{
+			String s;
+			s=dst+"= (int*)Tiger_new_array("+exp.toString()+")";
+			return s;
+		}
     	
     	
     }
@@ -401,6 +481,13 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+"=new Obj";
+    	  return s;
+      }
     }
 
     public static class Print extends T
@@ -416,6 +503,12 @@ public class Cfg
       public void accept(Visitor v)
       {
         v.visit(this);
+      }
+      public String toString()
+      {
+    	  String s;
+    	  s="System.out.println("+arg.toString()+")";
+    	  return s;
       }
     }
 
@@ -440,6 +533,13 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+" = "+left.toString()+" - "+right.toString();
+    	  return s;
+      }
     }
 
     public static class Times extends T
@@ -462,6 +562,12 @@ public class Cfg
       public void accept(Visitor v)
       {
         v.visit(this);
+      }
+      public String toString()
+      {
+    	  String s;
+    	  s=dst+" = "+left.toString()+" * "+right.toString();
+    	  return s;
       }
     }
 
@@ -489,6 +595,13 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=label.toString();
+    	  return s;
+      }
     }
 
     public static class If extends T
@@ -509,6 +622,13 @@ public class Cfg
       {
         v.visit(this);
       }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=operand.toString()+" "+truee.toString()+" "+falsee.toString();
+    	  return s;
+      }
     }
 
     public static class Return extends T
@@ -524,6 +644,13 @@ public class Cfg
       public void accept(Visitor v)
       {
         v.visit(this);
+      }
+      
+      public String toString()
+      {
+    	  String s;
+    	  s=operand.toString();
+    	  return s;
       }
     }
 

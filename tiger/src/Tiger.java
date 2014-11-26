@@ -241,24 +241,30 @@ public void lexAndParse(String fname)
           "C code printing", cAst, ppc);
       ppCCodePass.doit();
       
-      
+      //tansCfg
       cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
       control.CompilerPass genCfgCodePass = new control.CompilerPass(
           "Control-flow graph generation", cAst, transCfg);
       genCfgCodePass.doit();
       cfg.Cfg.Program.T cfgAst = transCfg.program;
-      
+      //Print Cfg
       cfg.PrettyPrintVisitor toDot = new cfg.PrettyPrintVisitor();
       control.CompilerPass genDotPass = new control.CompilerPass(
           "Draw control-flow graph", cfgAst, toDot);
       genDotPass.doit();
-      
+      //Draw control-flow graph
       if (control.Control.visualize != Control.Visualize_Kind_t.None) {
           cfg.VisualVisitor toDotv = new cfg.VisualVisitor();
           control.CompilerPass genDotPassv = new control.CompilerPass(
               "Draw control-flow graph", cfgAst, toDotv);
           genDotPassv.doit();
         }
+      
+   // optimizations on the control-flow graph
+      cfg.optimizations.Main cfgOpts = new cfg.optimizations.Main();
+      control.CompilerPass cfgOptPass = new control.CompilerPass(
+          "Control-flow graph optimizations", cfgOpts, cfgAst);
+      cfgOptPass.doit();
       
       
       

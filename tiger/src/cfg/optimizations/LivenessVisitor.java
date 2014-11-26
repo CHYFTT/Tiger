@@ -2,9 +2,14 @@ package cfg.optimizations;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
+import util.Graph;
+import util.Graph.Edge;
+import util.Graph.Node;
 import cfg.Cfg.Block;
 import cfg.Cfg.Block.BlockSingle;
+import cfg.Cfg.Block.T;
 import cfg.Cfg.Class.ClassSingle;
 import cfg.Cfg.Dec.DecSingle;
 import cfg.Cfg.MainMethod.MainMethodSingle;
@@ -70,7 +75,7 @@ public class LivenessVisitor implements cfg.Visitor
 
   // liveIn, liveOut for transfer
   public HashMap<Transfer.T, HashSet<String>> transferLiveIn;
-  public java.util.HashMap<Transfer.T, java.util.HashSet<String>> transferLiveOut;
+  public HashMap<Transfer.T, HashSet<String>> transferLiveOut;
 
   // As you will walk the tree for many times, so
   // it will be useful to recored which is which:
@@ -146,6 +151,7 @@ public class LivenessVisitor implements cfg.Visitor
   @Override
   public void visit(Int operand)
   {
+	  //int也不做操作
     return;
   }
 
@@ -243,6 +249,7 @@ public class LivenessVisitor implements cfg.Visitor
   @Override
   public void visit(Goto s)
   {
+	  //不需要做处理。因为Goto不涉及operand
     return;
   }
 
@@ -280,15 +287,23 @@ public class LivenessVisitor implements cfg.Visitor
   private void calculateStmTransferGenKill(BlockSingle b)
   {
     for (Stm.T s : b.stms) {
+    	//oneStm每一条语句刷新一次
       this.oneStmGen = new java.util.HashSet<>();
       this.oneStmKill = new java.util.HashSet<>();      
       s.accept(this);
+      /*
+       * s执行完accept后会怎么样
+       * oneStmKill会加入id
+       * oneStmGen会加入id
+       * 一条Stm可能会加入很多的Kill或Gen
+       */
+      //stmGen和stmKill只有一个，里面都放着每个stm的kill和gen
       this.stmGen.put(s, this.oneStmGen);
       this.stmKill.put(s, this.oneStmKill);
       if (control.Control.isTracing("liveness.step1")) {
         System.out.print("\ngen, kill for statement:");
-        s.toString();
-        System.out.print("\ngen is:");
+       System.out.println(s.toString());
+        System.out.print("gen is:");
         for (String str : this.oneStmGen) {
           System.out.print(str + ", ");
         }
@@ -296,17 +311,24 @@ public class LivenessVisitor implements cfg.Visitor
         for (String str : this.oneStmKill) {
           System.out.print(str + ", ");
         }
+        System.out.println("");
       }
     }
+    //oneTrans每次都需要刷新
     this.oneTransferGen = new java.util.HashSet<>();
     this.oneTransferKill = new java.util.HashSet<>();
     b.transfer.accept(this);
+    /*
+     * 执行完后会改变oneStmGen
+     * 
+     * this.oneTransfer里面是空的？？？
+     */
     this.transferGen.put(b.transfer, this.oneTransferGen);
     this.transferKill.put(b.transfer, this.oneTransferGen);
     if (control.Control.isTracing("liveness.step1")) {
       System.out.print("\ngen, kill for transfer:");
-      b.toString();
-      System.out.print("\ngen is:");
+      System.out.println(b.transfer.toString());
+      System.out.print("gen is:");
       for (String str : this.oneTransferGen) {
         System.out.print(str + ", ");
       }
@@ -314,8 +336,55 @@ public class LivenessVisitor implements cfg.Visitor
       for (String str : this.oneTransferKill) {
         System.out.print(str + ", ");
       }
+      System.out.println("");
     }
     return;
+    /*
+     * 之行完这个方法后，this.stmGen里面放着这个block的所有语句，以及与这个语句对应的gen和kill的set
+     */
+  }
+  
+  private void calculateBlockTransferGenKill(BlockSingle b)
+  {
+	  // 计算block的Gen和Kill
+	  java.util.HashSet<String> oneBlockGen=new java.util.HashSet<String>();
+	  java.util.HashSet<String> oneBlockKill=new java.util.HashSet<String>();
+	  
+	  oneBlockGen.addAll(this.transferGen.get(b.transfer));
+	  oneBlockKill.addAll(this.transferKill.get(b.transfer));
+	  
+	  
+	  //revers！！！！
+	  for(int i=b.stms.size()-1;i>=0;i--)
+	  {
+		  cfg.Cfg.Stm.T s=b.stms.get(i);
+		  
+		  oneBlockGen.removeAll(this.stmKill.get(s));
+		  oneBlockGen.addAll(this.stmGen.get(s));
+		  
+		  oneBlockKill.addAll(this.stmKill.get(s));
+	  }
+	  
+	  if (control.Control.isTracing("liveness.step2")) {
+			System.out.print("    block  "+b.label.toString()+" "+" gen is: {");
+			for (String s : oneBlockGen)
+				System.out.print(s + ", ");
+			System.out.println("}");
+
+			System.out.print("    block  "+b.label.toString()+" "+"kill is: {");
+			for (String s : oneBlockKill)
+				System.out.print(s + ", ");
+			System.out.println("}");
+		}
+	  
+	  this.blockGen.put(b, oneBlockGen);
+	  this.blockKill.put(b, oneBlockKill);
+	  
+  }
+  
+  private void calculateBlockInOut(BlockSingle b)
+  {
+	  //TODO
   }
 
   // block
@@ -326,6 +395,14 @@ public class LivenessVisitor implements cfg.Visitor
     case StmGenKill:
       calculateStmTransferGenKill(b);
       break;
+    case BlockGenKill:
+    	calculateBlockTransferGenKill(b);
+    	break;
+    case BlockInOut:
+    	calculateBlockInOut(b);
+    	break;
+    	
+    	
     default:
       // Your code here:
       return;
@@ -348,6 +425,12 @@ public class LivenessVisitor implements cfg.Visitor
     // For this, you should visit statements and transfers in a
     // block in a reverse order.
     // Your code here:
+    this.kind=Liveness_Kind_t.BlockGenKill;
+    for(Block.T block :m.blocks)
+    {
+    	block.accept(this);
+    }
+    
 
     // Step 3: calculate the "liveIn" and "liveOut" sets for each block
     // Note that to speed up the calculation, you should first
@@ -355,6 +438,159 @@ public class LivenessVisitor implements cfg.Visitor
     // crawl through the blocks in that order.
     // And also you should loop until a fix-point is reached.
     // Your code here:
+    
+    //初始化一个hashmap，方便以后根据lable查找block
+    java.util.HashMap<util.Label, Block.T> map=
+    		new java.util.HashMap<util.Label, Block.T>();
+    for(Block.T b:m.blocks)
+    {
+    	BlockSingle bb=(BlockSingle)b;
+    	map.put(bb.label, bb);
+    }
+    
+    util.Graph<Block.T> graph=new util.Graph<Block.T>(m.classId);
+    
+    //把所有block作为节点放入graph
+    for(Block.T b:m.blocks)
+    {
+    	BlockSingle bb=(BlockSingle)b;
+    	graph.addNode(bb);
+    }
+    
+    //绘图
+    for(Block.T b:m.blocks)
+    {
+    	BlockSingle bb=(BlockSingle)b;
+    	Transfer.T transfer=bb.transfer;
+    	if(transfer instanceof Transfer.Goto)
+    	{
+    		//画边
+    		Block.T to=map.get(((Transfer.Goto) transfer).label);
+    		graph.addEdge(bb, to);
+    		//在目的节点加入入节点
+    		graph.addto(to,bb);
+    	}
+    	else if(transfer instanceof Transfer.If)
+    	{
+    		Block.T to1=map.get(((Transfer.If) transfer).falsee);
+    		graph.addEdge(bb, to1);
+    		graph.addto(to1,bb);
+    		Block.T to2=map.get(((Transfer.If) transfer).truee);
+    		graph.addEdge(bb, to2);
+    		graph.addto(to2,bb);
+    	}
+    	else//当为return时，不需要加edge
+    		;
+    }
+    
+    graph.visualize();
+    
+    //图的拓扑排序
+    LinkedList<Block.T> top=new LinkedList<Block.T>();
+    boolean isFirst=true;
+    boolean topChanged=false;
+    int locate=0;
+    int size=graph.graph.size();
+		while (top.size() != size)
+		{
+			for (int i = 0; i <= graph.graph.size() - 1; i++) 
+			{
+				Graph<Block.T>.Node b = graph.graph.get(i);
+				if (isFirst) 
+				{
+					if (b.fr.isEmpty() && (!top.contains(b.data))) 
+					{//b没有入边，且不在top中
+						top.add(b.data);
+						locate=i;//记录位置，graph中哪一个节点进的top
+						topChanged=true;
+						BlockSingle bbb = (BlockSingle)b.data;
+						System.out.println(bbb.label.toString());
+						
+					}
+					isFirst = false;
+				} 
+				else
+				{
+					if (b.fr.isEmpty() && (!top.contains(b.data)))
+					{
+						top.add(b.data);
+						locate=i;//记录位置，graph中哪一个节点进的top
+						topChanged=true;
+						BlockSingle bbb = (BlockSingle)b.data;
+						System.out.println(bbb.label.toString());
+					} else if ((!top.contains(b.data))) 
+					{//可以有入边，但入边的节点已经在top中才行
+						boolean ok = true;
+						for (Block.T block : b.fr)
+						{
+							if (!top.contains(block)) 
+							{
+								ok = false;
+								break;
+							}
+						}
+						if (ok) 
+						{
+							top.add(b.data);
+							locate=i;//记录位置，graph中哪一个节点进的top
+							topChanged=true;
+							BlockSingle bbb = (BlockSingle)b.data;
+							System.out.println(bbb.label.toString());
+						}
+					} 
+					else
+						topChanged=false;
+				}
+			}
+			//for循环结束
+			/*
+			 * 每一次for循环必须要有一个节点进入top。否则就会出现死循环，即找不到没有入度的节点。
+			 * 所以一旦出现这种情况，要特殊处理。
+			 * 选上一次进top的节点所指向的节点进top
+			 */
+			if (!topChanged) 
+			{
+				Graph<Block.T>.Node temp = graph.graph.get(locate);
+				Edge edge = temp.edges.getFirst();
+				Graph<Block.T>.Node to = edge.to;
+				int k = graph.graph.indexOf(to);
+				top.add(to.data);
+				locate = k;
+				BlockSingle bbb = (BlockSingle) to.data;
+				System.out.println(bbb.label);
+			}
+			
+			
+		}
+		//reverse
+		System.out.println("reverse top sort");
+		for (int j = 0, k = top.size()-1; j<k;j++,k--) 
+		{
+			BlockSingle temp=(BlockSingle)top.get(j);
+			top.set(j, top.get(k));
+			top.set(k, temp);
+		}
+		for(Block.T b:top)
+		{
+			BlockSingle bb=(BlockSingle)b;
+			System.out.println(bb.label);
+		}
+		
+		//do real work
+		
+		this.kind=Liveness_Kind_t.BlockInOut;
+		for(Block.T b:top)
+		{//按照 逆拓扑的顺序执行
+			b.accept(this);
+		}
+		
+    
+    
+    
+    //用DFS得到伪逆拓扑序
+   // LinkedList<Block.T> top=new LinkedList<Block.T>();
+    
+    
 
     // Step 4: calculate the "liveIn" and "liveOut" sets for each
     // statement and transfer
@@ -394,12 +630,14 @@ public class LivenessVisitor implements cfg.Visitor
   @Override
   public void visit(VtableSingle v)
   {
+	  return;
   }
 
   // class
   @Override
   public void visit(ClassSingle c)
   {
+	  return;
   }
 
   // program
@@ -415,38 +653,44 @@ public class LivenessVisitor implements cfg.Visitor
 
 @Override
 public void visit(And m) {
-	// TODO Auto-generated method stub
-	
+	this.oneStmKill.add(m.dst);
+	m.left.accept(this);
+	m.right.accept(this);
 }
 
 @Override
 public void visit(ArraySelect m) {
-	// TODO Auto-generated method stub
-	
+	this.oneStmKill.add(m.id);
+	m.array.accept(this);
+	m.index.accept(this);
 }
 
 @Override
 public void visit(Length m) {
-	// TODO Auto-generated method stub
+	this.oneStmKill.add(m.dst);
+	m.array.accept(this);
 	
 }
 
 @Override
 public void visit(NewIntArray m) {
-	// TODO Auto-generated method stub
+	this.oneStmKill.add(m.dst);
+	m.exp.accept(this);
 	
 }
 
 @Override
 public void visit(Not m) {
-	// TODO Auto-generated method stub
+	this.oneStmKill.add(m.dst);
+	m.exp.accept(this);
 	
 }
 
 @Override
 public void visit(AssignArray m) {
-	// TODO Auto-generated method stub
-	
+	this.oneStmKill.add(m.dst);
+	m.exp.accept(this);
+	m.index.accept(this);
 }
 
 }

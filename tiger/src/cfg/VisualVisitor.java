@@ -172,7 +172,8 @@ public class VisualVisitor implements Visitor
   @Override
   public void visit(Return s)
   {
-
+	  emit("return ");
+	  s.operand.accept(this);
     return;
   }
 
