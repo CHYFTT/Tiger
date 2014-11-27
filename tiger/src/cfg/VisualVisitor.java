@@ -3,6 +3,7 @@ package cfg;
 import java.util.HashMap;
 
 import cfg.Cfg.Block;
+import cfg.Cfg.Stm;
 import cfg.Cfg.Block.BlockSingle;
 import cfg.Cfg.Class.ClassSingle;
 import cfg.Cfg.Dec.DecSingle;
@@ -187,11 +188,13 @@ public class VisualVisitor implements Visitor
   @Override
   public void visit(IntType t)
   {
+	  return;
   }
 
   @Override
   public void visit(IntArrayType t)
   {
+	  return;
   }
 
   // dec
@@ -232,6 +235,7 @@ public class VisualVisitor implements Visitor
     //再次遍历block
     for (Block.T block : m.blocks) {
       BlockSingle b = (BlockSingle) block;
+      
       Transfer.T transfer = b.transfer;
       if (transfer instanceof Transfer.Goto) {
         Transfer.Goto gotoo = (Transfer.Goto) transfer;
@@ -313,37 +317,54 @@ public class VisualVisitor implements Visitor
 
 @Override
 public void visit(And m) {
-	// TODO Auto-generated method stub
+	emit(m.dst + " = ");
+    m.left.accept(this);
+    emit(" + ");
+    m.right.accept(this);
 	
 }
 
 @Override
 public void visit(ArraySelect m) {
-	// TODO Auto-generated method stub
+	emit(m.id+" = ");
+	m.array.accept(this);
+	emit("[");
+	m.index.accept(this);
+	emit("]");
 	
 }
 
 @Override
 public void visit(Length m) {
-	// TODO Auto-generated method stub
+	emit(m.dst+" = ");
+	m.array.accept(this);
+	emit("[-1]");//这个地方特殊处理一下，上面一句只能输出this->number
 	
 }
 
 @Override
 public void visit(NewIntArray m) {
-	// TODO Auto-generated method stub
+	emit(m.dst + " = (int*)Tiger_new_array(");
+	m.exp.accept(this);//exp就是index的operand,提前已经打印出来了
+	emit(")");
 	
 }
 
 @Override
 public void visit(Not m) {
-	// TODO Auto-generated method stub
+	emit(m.dst+" = "+"!" );
+	m.exp.accept(this);
+	return;
 	
 }
 
 @Override
 public void visit(AssignArray m) {
-	// TODO Auto-generated method stub
+	if(m.isField==false)
+		emit(m.dst+"[");
+	else
+		emit("this->"+m.dst+"[");
+	m.index.accept(this);
 	
 }
 

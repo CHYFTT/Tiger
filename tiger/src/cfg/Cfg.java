@@ -649,7 +649,7 @@ public class Cfg
       public String toString()
       {
     	  String s;
-    	  s=operand.toString();
+    	  s="return "+operand.toString();
     	  return s;
       }
     }
@@ -696,17 +696,17 @@ public class Cfg
       {
         StringBuffer strb = new StringBuffer();
         strb.append(this.label.toString() + ":\\n");
-        // Lab5. Your code here:
+        // Lab5. Your code here: TODO
         /*
          * Stm应该是没有必要在控制流图里面显示。
          */
-     /*   for(cfg.Cfg.Stm.T s:this.stms)
+        for(cfg.Cfg.Stm.T s:this.stms)
         {
         	VisualVisitor v=new VisualVisitor();
         	s.accept(v);
         	strb.append(v.strb.toString()+"\n");
         }
-        */
+        
         
         VisualVisitor vv=new VisualVisitor();
         this.transfer.accept(vv);

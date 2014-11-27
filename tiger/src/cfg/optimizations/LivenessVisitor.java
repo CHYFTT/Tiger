@@ -2,7 +2,9 @@ package cfg.optimizations;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.TreeSet;
 
 import util.Graph;
 import util.Graph.Edge;
@@ -45,6 +47,8 @@ import cfg.Cfg.Vtable.VtableSingle;
 
 public class LivenessVisitor implements cfg.Visitor
 {
+	static LinkedList<Block.T> top=new LinkedList<Block.T>();
+	static util.Graph<Block.T> graph;
   // gen, kill for one statement
   private HashSet<String> oneStmGen;
   private HashSet<String> oneStmKill;
@@ -242,7 +246,7 @@ public class LivenessVisitor implements cfg.Visitor
   public void visit(If s)
   {
     // Invariant: accept() of operand modifies "gen"
-    s.operand.accept(this);
+    this.oneTransferGen.add(s.operand.toString());
     return;
   }
 
@@ -257,7 +261,7 @@ public class LivenessVisitor implements cfg.Visitor
   public void visit(Return s)
   {
     // Invariant: accept() of operand modifies "gen"
-    s.operand.accept(this);
+    this.oneTransferGen.add(s.operand.toString());
     return;
   }
 
@@ -324,7 +328,7 @@ public class LivenessVisitor implements cfg.Visitor
      * this.oneTransfer里面是空的？？？
      */
     this.transferGen.put(b.transfer, this.oneTransferGen);
-    this.transferKill.put(b.transfer, this.oneTransferGen);
+    this.transferKill.put(b.transfer, this.oneTransferKill);
     if (control.Control.isTracing("liveness.step1")) {
       System.out.print("\ngen, kill for transfer:");
       System.out.println(b.transfer.toString());
@@ -352,6 +356,7 @@ public class LivenessVisitor implements cfg.Visitor
 	  
 	  oneBlockGen.addAll(this.transferGen.get(b.transfer));
 	  oneBlockKill.addAll(this.transferKill.get(b.transfer));
+	  //TODO
 	  
 	  
 	  //revers！！！！
@@ -381,10 +386,52 @@ public class LivenessVisitor implements cfg.Visitor
 	  this.blockKill.put(b, oneBlockKill);
 	  
   }
-  
+
   private void calculateBlockInOut(BlockSingle b)
   {
 	  //TODO
+	  HashSet<String> oneBlockGen=this.blockGen.get(b);
+	  HashSet<String> oneBlockKill=this.blockKill.get(b);
+	  HashSet<String> oneBlockIn=new HashSet<String>();
+	  HashSet<String> oneBlockOut=new HashSet<String>();
+	  HashSet<String> oneBlockOuttemp=new HashSet<String>();
+	  
+	  for(Block.T bb:LivenessVisitor.top)
+	  {
+		  BlockSingle bs=(BlockSingle)bb;
+		  if(!bs.label.equals(b.label))
+		  {		//从top拿出来的与b不相等
+			  oneBlockOut.addAll(this.blockLiveIn.get(bs));
+		  }
+		  else//相等时退出循环
+			  break;
+	  }
+	  //确定了out
+	  this.blockLiveOut.put(b, oneBlockOut);
+	  //
+	  oneBlockOuttemp.addAll(oneBlockOut);
+	  oneBlockOuttemp.removeAll(oneBlockKill);
+	  oneBlockGen.addAll(oneBlockOuttemp);
+	  oneBlockIn.addAll(oneBlockGen);
+	  
+	  this.blockLiveIn.put(b, oneBlockIn);
+	  
+	  
+	  if (control.Control.isTracing("liveness.step3")) 
+		 {
+		  BlockSingle bs=(BlockSingle)b;
+			 oneBlockOut=this.blockLiveOut.get(b);
+			 oneBlockIn=this.blockLiveIn.get(b);
+				System.out.print("    block  "+bs.label.toString()+" "+" out is: {");
+				for (String s : oneBlockOut)
+					System.out.print(s + ", ");
+				System.out.println("}");
+
+				System.out.print("    block  "+bs.label.toString()+" "+"in is: {");
+				for (String s : oneBlockIn)
+					System.out.print(s + ", ");
+				System.out.println("}");
+			}
   }
 
   // block
@@ -413,6 +460,7 @@ public class LivenessVisitor implements cfg.Visitor
   @Override
   public void visit(MethodSingle m)
   {
+	  LivenessVisitor.top.clear();
     // Four steps:
     // Step 1: calculate the "gen" and "kill" sets for each
     // statement and transfer
@@ -439,6 +487,7 @@ public class LivenessVisitor implements cfg.Visitor
     // And also you should loop until a fix-point is reached.
     // Your code here:
     
+    this.kind=Liveness_Kind_t.BlockInOut;
     //初始化一个hashmap，方便以后根据lable查找block
     java.util.HashMap<util.Label, Block.T> map=
     		new java.util.HashMap<util.Label, Block.T>();
@@ -469,21 +518,26 @@ public class LivenessVisitor implements cfg.Visitor
     		graph.addEdge(bb, to);
     		//在目的节点加入入节点
     		graph.addto(to,bb);
+    		//在目的节点加入祖先信息
+//    		graph.addPre(to,bb);
     	}
     	else if(transfer instanceof Transfer.If)
     	{
     		Block.T to1=map.get(((Transfer.If) transfer).falsee);
     		graph.addEdge(bb, to1);
     		graph.addto(to1,bb);
+    		//graph.addPre(to1,bb);
     		Block.T to2=map.get(((Transfer.If) transfer).truee);
     		graph.addEdge(bb, to2);
     		graph.addto(to2,bb);
+    		//graph.addPre(to2,bb);
     	}
     	else//当为return时，不需要加edge
     		;
     }
     
-    graph.visualize();
+    //graph.visualize();
+    LivenessVisitor.graph=graph;
     
     //图的拓扑排序
     LinkedList<Block.T> top=new LinkedList<Block.T>();
@@ -491,6 +545,7 @@ public class LivenessVisitor implements cfg.Visitor
     boolean topChanged=false;
     int locate=0;
     int size=graph.graph.size();
+    System.out.println("top sort---------");
 		while (top.size() != size)
 		{
 			for (int i = 0; i <= graph.graph.size() - 1; i++) 
@@ -575,18 +630,99 @@ public class LivenessVisitor implements cfg.Visitor
 			BlockSingle bb=(BlockSingle)b;
 			System.out.println(bb.label);
 		}
+		System.out.println("this.top--------------------------");
+		LivenessVisitor.top.addAll(top);
+		for(Block.T b:LivenessVisitor.top)
+		{
+			BlockSingle bb=(BlockSingle)b;
+			System.out.println(bb.label);
+		}
+		
+		
+		
+		
 		
 		//do real work
-		
 		this.kind=Liveness_Kind_t.BlockInOut;
-		for(Block.T b:top)
-		{//按照 逆拓扑的顺序执行
-			b.accept(this);
+		this.blockLiveIn=new HashMap<Block.T, HashSet<String>>();
+		this.blockLiveOut=new HashMap<Block.T, HashSet<String>>();
+		for(Block.T b:LivenessVisitor.top)
+		{//按照 逆拓扑的顺序执行 TODO
+			if(LivenessVisitor.top.indexOf(b)==0)
+			{
+				 HashSet<String> oneBlockIn=new HashSet<String>();
+				 HashSet<String> oneBlockOut=new HashSet<String>();
+				 //final的out为empty
+				 this.blockLiveOut.put(b, oneBlockOut);
+				 
+				 HashSet<String> oneBlockGen=this.blockGen.get(b);
+				 HashSet<String> oneBolckKill=this.blockKill.get(b);
+				 
+				 oneBlockOut.removeAll(oneBolckKill);
+				 oneBlockGen.addAll(oneBlockOut);
+				 oneBlockIn.addAll(oneBlockGen);
+				 
+				 this.blockLiveIn.put(b, oneBlockIn);
+				 
+				 BlockSingle bb=(BlockSingle)b;
+				 if (control.Control.isTracing("liveness.step3")) 
+				 {
+					 oneBlockOut=this.blockLiveOut.get(b);
+					 oneBlockIn=this.blockLiveIn.get(b);
+						System.out.print("    block  "+bb.label.toString()+" "+" out is: {");
+						for (String s : oneBlockOut)
+							System.out.print(s + ", ");
+						System.out.println("}");
+
+						System.out.print("    block  "+bb.label.toString()+" "+"in is: {");
+						for (String s : oneBlockIn)
+							System.out.print(s + ", ");
+						System.out.println("}");
+					}
+			}
+			else
+				b.accept(this);
 		}
 		
     
     
-    
+    //test the pre
+/*		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+		for(Graph<Block.T>.Node n:LivenessVisitor.graph.graph)
+		{
+			BlockSingle b=(BlockSingle)n.data;
+			System.out.print("\n"+b.label+": ");
+			HashSet<Block.T> pr=n.pre;
+			Iterator<T> it=pr.iterator();
+			while(it.hasNext())
+			{
+				BlockSingle bbb=(BlockSingle) it.next();
+				System.out.print(bbb.label+" ");
+			}
+			
+		}
+		*/
+		
+		//用DFS得到节点的联通情况
+		HashSet<Graph<Block.T>.Node> dfs=new HashSet<Graph<Block.T>.Node>();
+		for(Graph<Block.T>.Node node:LivenessVisitor.graph.graph)
+		{
+			BlockSingle d=(BlockSingle)node.data;
+			dfs=LivenessVisitor.graph.dfs(d);
+			Iterator it=dfs.iterator();
+			System.out.print(d.label+"------____");
+			while(it.hasNext())
+			{
+				
+				Graph<Block.T>.Node dd=(Node)it.next();
+				BlockSingle ddd=(BlockSingle)dd.data;
+				System.out.print(ddd.label+",");
+			}
+			System.out.println("");
+			
+		}
+		
+		
     //用DFS得到伪逆拓扑序
    // LinkedList<Block.T> top=new LinkedList<Block.T>();
     
