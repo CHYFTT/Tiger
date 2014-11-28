@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Queue;
 import java.util.TreeSet;
 
 import cfg.Cfg.Block;
@@ -53,6 +54,16 @@ public class Graph<X> implements Serializable
     {
       return data.toString();
     }
+    
+    public HashSet<Node> getNeighbors()
+	{
+		HashSet<Node> nei=new HashSet<Node>();
+		for(Edge e:this.edges)
+		{
+			nei.add(e.to);
+		}
+		return nei;
+	}
   }
 
   // graph edge
@@ -112,8 +123,10 @@ public class Graph<X> implements Serializable
 	  //先处理边
 	  for(Edge edge:node.edges)
 	  {
-		  edge.to.indegree--;
-		  edge.from.outdegree--;
+			if (edge.to != null)
+				edge.to.indegree--;
+			if (edge.from != null)
+				edge.from.outdegree--;
 	  }
 	  this.graph.remove(node);
   }
@@ -290,5 +303,59 @@ public class Graph<X> implements Serializable
 	
   }
   
-  
+  public ArrayList<X> topSort()
+  {
+	  ArrayList<X> top=new ArrayList<X>();
+	  Queue<Node> q=new LinkedList<Node>();
+	  HashSet<Node> neighbors=new HashSet<Node>();
+	  util.Graph<T> g=null;
+		try {
+			g=(Graph<T>) Clone.clone(this);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	  for(Graph<T>.Node n:g.graph)
+	  {
+		  if(n.indegree==0)
+		  {
+			  q.add( (Graph<X>.Node) n);
+			  top.add((X) n.data);
+		  }
+		  
+	  }
+		  while(!q.isEmpty())
+		  {
+			  Node qn=q.poll();
+			  System.out.println(qn);
+			  
+			  for(Edge edge:qn.edges)
+			  {
+				  if(g.graph.contains(edge.to))
+					  neighbors.add(edge.to);
+			  }
+			  //这个getNeighbors方法有问题。返回的还是原图的nei
+			  //neighbors=qn.getNeighbors();
+			  g.graph.remove(qn);
+			  for(Node nn:neighbors)
+			  {
+				  nn.indegree--;
+				  if(nn.indegree==0)
+				  {
+					  	q.add(nn);
+						top.add(nn.data);
+						g.graph.remove(nn);
+				  }
+			  }
+		  }
+		  
+		if (q.size() != g.graph.size()) 
+		{
+			throw new IllegalStateException("存在环");
+		}
+		return top;
 }
+	
+	  
+  }
+  
+

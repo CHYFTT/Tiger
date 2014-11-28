@@ -8,8 +8,8 @@ public class Label implements Serializable
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private int i;
-  private static int count = 0;
+	public int i;
+	private static int count = 0;
 
   public Label()
   {

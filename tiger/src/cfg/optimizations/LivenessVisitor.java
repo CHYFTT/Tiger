@@ -50,8 +50,12 @@ import cfg.Cfg.Vtable.VtableSingle;
 
 public class LivenessVisitor implements cfg.Visitor
 {
-	static LinkedList<Block.T> top=new LinkedList<Block.T>();
+	//top序列
+	static ArrayList<Block.T> top=new ArrayList<Block.T>();
+	static ArrayList<Block.T> retop=new ArrayList<Block.T>();
+	//原始图
 	static util.Graph<Block.T> graph;
+	//删除环之后的图
 	static util.Graph<Block.T> graphtemp;
   // gen, kill for one statement
   private HashSet<String> oneStmGen;
@@ -447,7 +451,7 @@ public class LivenessVisitor implements cfg.Visitor
 	  
 	  //用top
 	  
-	  for(Block.T bb:LivenessVisitor.top)
+	  for(Block.T bb:LivenessVisitor.retop)
 	  {
 		  BlockSingle bs=(BlockSingle)bb;
 		  if(!bs.label.equals(b.label))
@@ -525,6 +529,10 @@ public class LivenessVisitor implements cfg.Visitor
   public void visit(MethodSingle m)
   {
 	  LivenessVisitor.top.clear();
+	  LivenessVisitor.retop.clear();
+	  
+	  
+	  
     // Four steps:
     // Step 1: calculate the "gen" and "kill" sets for each
     // statement and transfer
@@ -608,15 +616,15 @@ public class LivenessVisitor implements cfg.Visitor
     
     Node start=LivenessVisitor.graphtemp.graph.getFirst();
     cycle=LivenessVisitor.graphtemp.delCycle(start);
-    
-    System.out.println("test cycle");
+  //环测试  
+   System.out.println("test cycle");
 
-    Set en=cycle.entrySet();
-    Iterator it=en.iterator();
-    while(it.hasNext())
+    Set enn=cycle.entrySet();
+    Iterator itt=enn.iterator();
+    while(itt.hasNext())
     {
     	System.out.print("\n@");
-    	 Map.Entry   entry   =   (Map.Entry)it.next(); 
+    	 Map.Entry   entry   =   (Map.Entry)itt.next(); 
     	 BlockSingle b1=(BlockSingle) entry.getKey();
     	 System.out.print(b1.label.toString()+": ");
     	 ArrayList<Block.T> b2=(ArrayList<Block.T>) entry.getValue();
@@ -627,13 +635,72 @@ public class LivenessVisitor implements cfg.Visitor
     	 }
     	 System.out.println("");
     }
+    
+    
+    //删除节点
+    Set en=cycle.entrySet();
+    Iterator it=en.iterator();
+    while(it.hasNext())
+    {
+    	Map.Entry entry=(Map.Entry)it.next();
+    	ArrayList<Block.T> b1=(ArrayList<Block.T>)entry.getValue();
+    	for(int j=0;j<b1.size();j++)
+    	{
+    		LivenessVisitor.graphtemp.delNode(b1.get(j));
+    	}
+    }
+    
+    LivenessVisitor.graphtemp.visualize();
+   //删除测试 
+    System.out.print("number of node:");
+    System.out.println(LivenessVisitor.graphtemp.graph.size());
+    for(Node n1:LivenessVisitor.graphtemp.graph)
+    {
+    	BlockSingle b3=(BlockSingle)n1.data;
+    	System.out.println(b3.label+"入度为:"+n1.indegree);
+    }
+    
+    //top排序
+    LivenessVisitor.top=LivenessVisitor.graphtemp.topSort();
+    //top测试
+    System.out.println("test top");
+    for(int i=0;i<LivenessVisitor.top.size();i++)
+    {
+    	BlockSingle s=(BlockSingle)LivenessVisitor.top.get(i);
+    	System.out.println(s.label);
+    }
+    
+    //reverse top
+    
+    for (int j =LivenessVisitor.top.size()-1 ;j>-1; j--) 
+	{
+		BlockSingle temp=(BlockSingle)top.get(j);
+		for(Node e:this.graph.graph)
+		{
+			BlockSingle temp2=(BlockSingle)e.data;
+			if(temp.label.i==temp2.label.i)
+				temp=(BlockSingle) e.data;
+		}
+		LivenessVisitor.retop.add(temp);
+		
+	}
+  //测试retop
+	System.out.println("this.top--------------------------");
+	for(Block.T b:LivenessVisitor.retop)
+	{
+		BlockSingle bb=(BlockSingle)b;
+		System.out.println(bb.label);
+	}
+    
+    
+    
   
     
     
     
     
     
-/*    //图的拓扑排序        TODO 没用
+/*    //图的拓扑排序        
     LinkedList<Block.T> top=new LinkedList<Block.T>();
     boolean isFirst=true;
     boolean topChanged=false;
@@ -737,15 +804,15 @@ public class LivenessVisitor implements cfg.Visitor
     
     
 		
-/*		
+	
 		
-		//do real work TODO
+		//do real work 
 		this.kind=Liveness_Kind_t.BlockInOut;
 		this.blockLiveIn=new HashMap<Block.T, HashSet<String>>();
 		this.blockLiveOut=new HashMap<Block.T, HashSet<String>>();
-		for(Block.T b:LivenessVisitor.top)
+		for(Block.T b:LivenessVisitor.retop)
 		{//按照 逆拓扑的顺序执行 
-			if(LivenessVisitor.top.indexOf(b)==0)
+			if(LivenessVisitor.retop.indexOf(b)==0)
 			{
 				 HashSet<String> oneBlockIn=new HashSet<String>();
 				 HashSet<String> oneBlockOut=new HashSet<String>();
@@ -783,7 +850,7 @@ public class LivenessVisitor implements cfg.Visitor
 		
     
     
-		
+	/*	
 		//用DFS得到节点的联通情况
 		HashSet<Graph<Block.T>.Node> dfs=new HashSet<Graph<Block.T>.Node>();
 		for(Graph<Block.T>.Node node:LivenessVisitor.graph.graph)
@@ -804,8 +871,8 @@ public class LivenessVisitor implements cfg.Visitor
 		}
 		
 		
-    
     */
+    
 
     // Step 4: calculate the "liveIn" and "liveOut" sets for each
     // statement and transfer
