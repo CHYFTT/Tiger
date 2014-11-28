@@ -1,34 +1,50 @@
 package util;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.TreeSet;
 
-public class Graph<X>
-{
+import cfg.Cfg.Block;
+import cfg.Cfg.Block.BlockSingle;
+import cfg.Cfg.Block.T;
+import cfg.optimizations.LivenessVisitor;
 
-  // graph node
-  public class Node
+public class Graph<X> implements Serializable
+{
+	private static final long serialVersionUID = 1L;
+
+// graph node
+  public class Node implements Serializable
   {
-    public X data;
+	private static final long serialVersionUID = 1L;
+	public X data;
     public LinkedList<Edge> edges;
-    public HashSet<X> fr;//直接指向这个节点的node.data
-    public HashSet<X> pre;//这个节点的所有祖先
+    public Integer indegree;
+	public Integer outdegree;
+   // public HashSet<X> fr;//直接指向这个节点的node.data
+    //public HashSet<X> pre;//这个节点的所有祖先
 
     public Node()
     {
       this.data = null;
       this.edges = null;
-      this.fr=null;
-      this.pre=null;
+      this.indegree=0;
+      this.outdegree=0;
+      //this.fr=null;
+     // this.pre=null;
     }
 
     public Node(X data)
     {
       this.data = data;//放block
       this.edges = new LinkedList<Edge>();
-      this.fr=new HashSet<X>();//指向这个节点的node.data
-      this.pre=new HashSet<X>();
+      this.indegree=0;
+      this.outdegree=0;
+     // this.fr=new HashSet<X>();//指向这个节点的node.data
+     // this.pre=new HashSet<X>();
       ;
     }
 
@@ -40,9 +56,10 @@ public class Graph<X>
   }
 
   // graph edge
-  public class Edge
+  public class Edge implements Serializable
   {
-    public Node from;
+	private static final long serialVersionUID = 1L;
+	public Node from;
     public Node to;
 
     public Edge(Node from, Node to)
@@ -79,6 +96,28 @@ public class Graph<X>
     this.graph = new LinkedList<Node>();
   }
 
+  public void delNode(X data)
+  {
+	  Node node=this.lookupNode(data);
+	  if(node==null)
+		 new util.Bug();
+	  
+	  this.delNode(node);
+	  
+	  
+  }
+  
+  private void delNode(Node node)
+  {
+	  //先处理边
+	  for(Edge edge:node.edges)
+	  {
+		  edge.to.indegree--;
+		  edge.from.outdegree--;
+	  }
+	  this.graph.remove(node);
+  }
+  
   private void addNode(Node node)
   {//在最后加入node，主要是给下面的方法调用
     this.graph.addLast(node);
@@ -103,13 +142,12 @@ public class Graph<X>
     return null;
   }
   
-  public void addto(X to,X from)
-  {
-	  //TODO
-	  Node too=this.lookupNode(to);
-	  too.fr.add(from);
-	  
-  }
+//  public void addto(X to,X from)
+//  {
+//	  Node too=this.lookupNode(to);
+//	  too.fr.add(from);
+//	  
+//  }
   
 //  public void addPre(X to,X from)
 //  {//加入祖先的信息
@@ -121,6 +159,8 @@ public class Graph<X>
 
   private void addEdge(Node from, Node to)
   {
+	  from.outdegree++;//from的出度++
+		to.indegree++;//to的入度++
     from.edges.addLast(new Edge(from, to));
   }
 
@@ -142,6 +182,7 @@ public class Graph<X>
     for (Edge edge : start.edges)
     {
     	//这个节点的edge指向的节点没有在visited里面，就从指向的那个节点开始,继续DFS
+    	//如果已经在，那就换一条边继续
       if (!visited.contains(edge.to))
       {
     	  visited.add(edge.to);
@@ -159,7 +200,7 @@ public class Graph<X>
     if (startNode == null)
       new util.Bug();
 
-    //用Tree保存访问过的节点。
+    //用Set保存访问过的节点。
     java.util.HashSet<Node> visited = new java.util.HashSet<Node>();
     //开始DFS
     visited=this.dfsDoit(startNode,visited);
@@ -174,6 +215,8 @@ public class Graph<X>
 //     
     return visited;
   }
+  
+  
 
   public void visualize()
   {
@@ -196,4 +239,56 @@ public class Graph<X>
       new util.Bug();
     }
   }
+  
+  
+  HashSet<Graph<T>.Node> visited = new HashSet<Graph<T>.Node>();
+  LinkedList<Graph<T>.Node> trace=new LinkedList<Graph<T>.Node>();
+  HashMap<Block.T,ArrayList<Block.T>> cycle=new HashMap<Block.T,ArrayList<Block.T>>();
+//对克隆图进行删除环路 TODO
+  public HashMap<Block.T,ArrayList<Block.T>> delCycle(Graph<T>.Node n)
+  {
+		if(visited.contains(n))
+		{
+			int j;
+            if((j=trace.indexOf(n))!=-1)
+            {//只输出trace的一部分。j-i的部分
+                //System.out.print("Cycle:");
+                
+                BlockSingle b=(BlockSingle) trace.get(j).data;
+               // System.out.print(b.label.toString()+" ");
+                j++;
+                
+                ArrayList<Block.T> cy=new ArrayList<Block.T>();
+                while(j<trace.size())
+                {
+                	BlockSingle bb=(BlockSingle) trace.get(j).data;
+                   // System.out.print(bb.label.toString()+" ");
+                    j++;
+                    //
+                    cy.add(bb);
+                }
+                
+                cycle.put(b, cy);
+                System.out.print("\n");
+                return cycle;
+            }
+            return cycle;
+			
+		}
+		else
+		{
+			visited.add(n);
+			trace.add(n);
+		}
+		
+		for(Graph<T>.Edge edge:n.edges)
+		{
+			delCycle(edge.to);
+		}
+		trace.remove(trace.size()-1);
+		return cycle;
+	
+  }
+  
+  
 }

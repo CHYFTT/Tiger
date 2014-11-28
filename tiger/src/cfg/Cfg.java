@@ -1,20 +1,34 @@
 package cfg;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 
-public class Cfg
+public class Cfg implements Serializable
 {
-  // //////////////////////////////////////////////////
+	private static final long serialVersionUID = 1L;
+
+// //////////////////////////////////////////////////
   // type
-  public static class Type
+  public static class Type implements Serializable
   {
-    public static abstract class T implements cfg.Acceptable
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
     public static class ClassType extends T
     {
-      public String id;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String id;
 
       public ClassType(String id)
       {
@@ -36,7 +50,12 @@ public class Cfg
 
     public static class IntType extends T
     {
-      public IntType()
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+	public IntType()
       {
       }
 
@@ -55,7 +74,12 @@ public class Cfg
 
     public static class IntArrayType extends T
     {
-      public IntArrayType()
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+	public IntArrayType()
       {
       }
 
@@ -76,15 +100,26 @@ public class Cfg
 
   // //////////////////////////////////////////////////
   // dec
-  public static class Dec
-  {
-    public static abstract class T implements cfg.Acceptable
+  public static class Dec implements Serializable
+  { 
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class DecSingle extends T
+    public static class DecSingle extends T 
     {
-      public Type.T type;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public Type.T type;
       public String id;
 
       public DecSingle(Type.T type, String id)
@@ -104,15 +139,19 @@ public class Cfg
 
   // //////////////////////////////////////////////////
   // Operand
-  public static class Operand
+  public static class Operand implements Serializable
   {
-    public static abstract class T implements cfg.Acceptable
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class Int extends T
+    public static class Int extends T 
     {
-      public int i;
+		private static final long serialVersionUID = 1L;
+	public int i;
 
       public Int(int i)
       {
@@ -133,9 +172,13 @@ public class Cfg
       }
     }
 
-    public static class Var extends T
+    public static class Var extends T 
     {
-      public String id;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String id;
       public boolean isField;
       //也要加上isField字段。这个对应于C里面的Id的isField
 
@@ -170,15 +213,29 @@ public class Cfg
 
   // //////////////////////////////////////////////////
   // statement
-  public static class Stm
+  public static class Stm implements Serializable
   {
-    public static abstract class T implements cfg.Acceptable
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class Add extends T
+    public static class Add extends T 
     {
-      public String dst;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public Type.T ty;
       public Operand.T left;
@@ -207,9 +264,13 @@ public class Cfg
       }
     }
     
-    public static class And extends T
+    public static class And extends T implements Serializable
     {
-    	public String dst;
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String dst;
     	public Operand.T left;
     	public Operand.T right;
     	
@@ -231,9 +292,13 @@ public class Cfg
 		}
     }
     
-    public static class ArraySelect extends T
+    public static class ArraySelect extends T implements Serializable
     {
-    	public String id;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String id;
     	public Operand.T array;
     	public Operand.T index;
     	
@@ -259,9 +324,13 @@ public class Cfg
     	
     }
     
-    public static class AssignArray extends T
+    public static class AssignArray extends T implements Serializable
     {
-    	public String dst;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String dst;
     	public Operand.T index;
     	public Operand.T exp;
     	public boolean isField;
@@ -292,9 +361,13 @@ public class Cfg
     	
     }
 
-    public static class InvokeVirtual extends T
+    public static class InvokeVirtual extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       public String obj;
       public String f;
       // type of the destination variable
@@ -324,9 +397,13 @@ public class Cfg
 		}
     }
     
-    public static class Length extends T
+    public static class Length extends T implements Serializable
     {
-    	public String dst;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String dst;
     	public Operand.T array;
     	
     	
@@ -349,9 +426,13 @@ public class Cfg
 		}
     }
 
-    public static class Lt extends T
+    public static class Lt extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public Type.T ty;
       public Operand.T left;
@@ -379,9 +460,13 @@ public class Cfg
       }
     }
 
-    public static class Move extends T
+    public static class Move extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public Type.T ty;
       public Operand.T src;
@@ -409,9 +494,13 @@ public class Cfg
       }
     }
     
-    public static class Not extends T
+    public static class Not extends T implements Serializable
     {
-    	public String dst;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String dst;
     	public Operand.T exp;
     	
     	
@@ -436,9 +525,13 @@ public class Cfg
     	
     }
     
-    public static class NewIntArray extends T
+    public static class NewIntArray extends T implements Serializable
     {
-    	public String dst;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public String dst;
     	public Operand.T exp;
     	
     	
@@ -464,9 +557,13 @@ public class Cfg
     	
     }
 
-    public static class NewObject extends T
+    public static class NewObject extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public String c;
 
@@ -490,9 +587,13 @@ public class Cfg
       }
     }
 
-    public static class Print extends T
+    public static class Print extends T implements Serializable
     {
-      public Operand.T arg;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public Operand.T arg;
 
       public Print(Operand.T arg)
       {
@@ -512,9 +613,13 @@ public class Cfg
       }
     }
 
-    public static class Sub extends T
+    public static class Sub extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public Type.T ty;
       public Operand.T left;
@@ -542,9 +647,13 @@ public class Cfg
       }
     }
 
-    public static class Times extends T
+    public static class Times extends T implements Serializable
     {
-      public String dst;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String dst;
       // type of the destination variable
       public Type.T ty;
       public Operand.T left;
@@ -575,15 +684,29 @@ public class Cfg
 
   // //////////////////////////////////////////////////
   // transfer
-  public static class Transfer
+  public static class Transfer implements Serializable
   {
-    public static abstract class T implements cfg.Acceptable
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class Goto extends T
+    public static class Goto extends T 
     {
-      public util.Label label;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public util.Label label;
 
       public Goto(util.Label label)
       {
@@ -604,9 +727,13 @@ public class Cfg
       }
     }
 
-    public static class If extends T
-    {
-      public Operand.T operand;
+    public static class If extends T implements Serializable
+    { 
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public Operand.T operand;
       public util.Label truee;
       public util.Label falsee;
 
@@ -631,9 +758,13 @@ public class Cfg
       }
     }
 
-    public static class Return extends T
+    public static class Return extends T implements Serializable
     {
-      public Operand.T operand;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public Operand.T operand;
 
       public Return(Operand.T operand)
       {
@@ -658,15 +789,29 @@ public class Cfg
 
   // //////////////////////////////////////////////////
   // block
-  public static class Block
+  public static class Block implements Serializable
   {
-    public static abstract class T implements cfg.Acceptable
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class BlockSingle extends T
+    public static class BlockSingle extends T 
     {
-      public util.Label label;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public util.Label label;
       public LinkedList<Stm.T> stms;
       public Transfer.T transfer;
 
@@ -727,13 +872,22 @@ public class Cfg
   // method
   public static class Method
   {
-    public static abstract class T implements cfg.Acceptable
+    public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class MethodSingle extends T
+    public static class MethodSingle extends T 
     {
-      public Type.T retType;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public Type.T retType;
       public String id;
       public String classId;
       public LinkedList<Dec.T> formals;
@@ -772,13 +926,22 @@ public class Cfg
   // main method
   public static class MainMethod
   {
-    public static abstract class T implements cfg.Acceptable
+    public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class MainMethodSingle extends T
+    public static class MainMethodSingle extends T 
     {
-      public LinkedList<Dec.T> locals;
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public LinkedList<Dec.T> locals;
       public LinkedList<Block.T> blocks;
 
       public MainMethodSingle(LinkedList<Dec.T> locals,
@@ -803,13 +966,22 @@ public class Cfg
   // vtable
   public static class Vtable
   {
-    public static abstract class T implements cfg.Acceptable
+    public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
     public static class VtableSingle extends T
     {
-      public String id; // name of the class
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String id; // name of the class
       public LinkedList<cfg.Ftuple> ms; // all methods
 
       public VtableSingle(String id, LinkedList<cfg.Ftuple> ms)
@@ -835,9 +1007,13 @@ public class Cfg
     {
     }
 
-    public static class ClassSingle extends T
+    public static class ClassSingle extends T implements Serializable
     {
-      public String id;
+      /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public String id;
       public LinkedList<cfg.Tuple> decs;
 
       public ClassSingle(String id, LinkedList<cfg.Tuple> decs)
@@ -860,13 +1036,22 @@ public class Cfg
   // program
   public static class Program
   {
-    public static abstract class T implements cfg.Acceptable
+    public static abstract class T implements cfg.Acceptable,Serializable
     {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
     }
 
-    public static class ProgramSingle extends T
+    public static class ProgramSingle extends T 
     {
-      public LinkedList<Class.T> classes;//类的声明
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	public LinkedList<Class.T> classes;//类的声明
       public LinkedList<Vtable.T> vtables;//虚方法
       public LinkedList<Method.T> methods;//方法
       public MainMethod.T mainMethod;//main函数
