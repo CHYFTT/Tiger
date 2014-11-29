@@ -6,12 +6,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.TreeSet;
-
 import cfg.Cfg.Block;
 import cfg.Cfg.Block.BlockSingle;
 import cfg.Cfg.Block.T;
-import cfg.optimizations.LivenessVisitor;
 
 public class Graph<X> implements Serializable
 {
@@ -257,11 +254,17 @@ public class Graph<X> implements Serializable
   HashSet<Graph<T>.Node> visited = new HashSet<Graph<T>.Node>();
   LinkedList<Graph<T>.Node> trace=new LinkedList<Graph<T>.Node>();
   HashMap<Block.T,ArrayList<Block.T>> cycle=new HashMap<Block.T,ArrayList<Block.T>>();
-//对克隆图进行删除环路 TODO
+
+  //对克隆图进行删除环路 
   public HashMap<Block.T,ArrayList<Block.T>> delCycle(Graph<T>.Node n)
   {
 		if(visited.contains(n))
 		{
+			BlockSingle bs=(BlockSingle)n.data;
+			if(bs.label.i==32)
+			{
+				System.out.println("你妹！！！！！");
+			}
 			int j;
             if((j=trace.indexOf(n))!=-1)
             {//只输出trace的一部分。j-i的部分
@@ -280,8 +283,24 @@ public class Graph<X> implements Serializable
                     //
                     cy.add(bb);
                 }
-                
-                cycle.put(b, cy);
+                //cy1是之前的环
+                ArrayList<Block.T> cy1=cycle.get(b);
+                //将新环的节点加入
+                /*
+                 * 此处并不能求得所有的环了。只是消除了一个最大的环。
+                 */
+                if(cy1!=null)
+                {
+                for(Block.T bt:cy)
+                {
+                	BlockSingle btt=(BlockSingle)bt;
+                	if(!cy1.contains(btt))
+                		cy1.add(btt);
+                }
+                cycle.put(b, cy1);
+                }
+                else
+                	cycle.put(b, cy);//b的值可能会重复，所以很多环会
                 System.out.print("\n");
                 return cycle;
             }
@@ -298,12 +317,14 @@ public class Graph<X> implements Serializable
 		{
 			delCycle(edge.to);
 		}
+		visited.remove(n);
 		trace.remove(trace.size()-1);
 		return cycle;
 	
   }
   
-  public ArrayList<X> topSort()
+  @SuppressWarnings("unchecked")
+public ArrayList<X> topSort()
   {
 	  ArrayList<X> top=new ArrayList<X>();
 	  Queue<Node> q=new LinkedList<Node>();
@@ -326,7 +347,7 @@ public class Graph<X> implements Serializable
 		  while(!q.isEmpty())
 		  {
 			  Node qn=q.poll();
-			  System.out.println(qn);
+			  //System.out.println(qn);
 			  
 			  for(Edge edge:qn.edges)
 			  {

@@ -4,13 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
-
 import util.Graph;
-import util.Graph.Edge;
 import util.Graph.Node;
 import cfg.Cfg.Block;
 import cfg.Cfg.Block.BlockSingle;
@@ -52,6 +49,7 @@ public class LivenessVisitor implements cfg.Visitor
 {
 	//top序列
 	static ArrayList<Block.T> top=new ArrayList<Block.T>();
+	//reverse top
 	static ArrayList<Block.T> retop=new ArrayList<Block.T>();
 	//原始图
 	static util.Graph<Block.T> graph;
@@ -91,6 +89,7 @@ public class LivenessVisitor implements cfg.Visitor
   
   public ArrayList<Block.T> cy;
   public HashMap<Block.T,ArrayList<Block.T>> cycle;
+  public HashMap<Block.T,ArrayList<Block.T>> recycle;
 
   // As you will walk the tree for many times, so
   // it will be useful to recored which is which:
@@ -129,6 +128,8 @@ public class LivenessVisitor implements cfg.Visitor
     
     this.cy=new ArrayList<Block.T>();
     this.cycle=new HashMap<Block.T,ArrayList<Block.T>>();
+    
+    this.recycle=new HashMap<Block.T,ArrayList<Block.T>>();
 
     this.kind = Liveness_Kind_t.None;
   }
@@ -362,7 +363,6 @@ public class LivenessVisitor implements cfg.Visitor
       this.stmKill.put(s, this.oneStmKill);
       if (control.Control.isTracing("liveness.step1")) {
         System.out.print("\ngen, kill for statement:");
-       System.out.println(s.toString());
         System.out.print("gen is:");
         for (String str : this.oneStmGen) {
           System.out.print(str + ", ");
@@ -525,7 +525,8 @@ public class LivenessVisitor implements cfg.Visitor
   }
 
   // method
-  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes", "static-access" })
+@Override
   public void visit(MethodSingle m)
   {
 	  LivenessVisitor.top.clear();
@@ -569,7 +570,7 @@ public class LivenessVisitor implements cfg.Visitor
     	map.put(bb.label, bb);
     }
     
-    util.Graph<Block.T> graph=new util.Graph<Block.T>(m.classId);
+    util.Graph<Block.T> graph=new util.Graph<Block.T>(m.id+"@@@@@");
     
     //把所有block作为节点放入graph
     for(Block.T b:m.blocks)
@@ -588,35 +589,27 @@ public class LivenessVisitor implements cfg.Visitor
     		//画边
     		Block.T to=map.get(((Transfer.Goto) transfer).label);
     		graph.addEdge(bb, to);
-    		//在目的节点加入入节点
-    	//	graph.addto(to,bb);
-    		//在目的节点加入祖先信息
-//    		graph.addPre(to,bb);
     	}
     	else if(transfer instanceof Transfer.If)
     	{
     		Block.T to1=map.get(((Transfer.If) transfer).falsee);
     		graph.addEdge(bb, to1);
-    	//	graph.addto(to1,bb);
-    		//graph.addPre(to1,bb);
     		Block.T to2=map.get(((Transfer.If) transfer).truee);
     		graph.addEdge(bb, to2);
-    	//	graph.addto(to2,bb);
-    		//graph.addPre(to2,bb);
     	}
     	else//当为return时，不需要加edge
     		;
     }
-    
-    //graph.visualize();
+    //画出删除环之后的图，会存在一点绘图时的误差，没必要再写一个visual
+    graph.visualize();
     LivenessVisitor.graph=graph;
     //克隆图
-    util.Graph<Block.T> graphtemp=(Graph<T>) util.Clone.clone(graph);
+    util.Graph<Block.T> graphtemp=(Graph<Block.T>) util.Clone.clone(graph);
     LivenessVisitor.graphtemp=graphtemp;
     
     Node start=LivenessVisitor.graphtemp.graph.getFirst();
     cycle=LivenessVisitor.graphtemp.delCycle(start);
-  //环测试  
+  //环测试  ：会输出一个节点上最大的环
    System.out.println("test cycle");
 
     Set enn=cycle.entrySet();
@@ -677,6 +670,7 @@ public class LivenessVisitor implements cfg.Visitor
 		BlockSingle temp=(BlockSingle)top.get(j);
 		for(Node e:this.graph.graph)
 		{
+			//找到原始图中的Block
 			BlockSingle temp2=(BlockSingle)e.data;
 			if(temp.label.i==temp2.label.i)
 				temp=(BlockSingle) e.data;
@@ -801,6 +795,40 @@ public class LivenessVisitor implements cfg.Visitor
 		
 */		
     
+	//先重造retop,为了能使用原来的map，必须用原图的block替换retop的。现在retop的block是深度克隆的。
+    Set<Entry<T, ArrayList<T>>> en2=cycle.entrySet();
+    Iterator<Entry<T, ArrayList<T>>> it2=en2.iterator();
+    while(it2.hasNext())
+    {
+    	Map.Entry entry=(Map.Entry)it2.next();
+    	//将List里面的Block用原图替换
+    	ArrayList<Block.T> b1=(ArrayList<Block.T>)entry.getValue();
+    	for(int i=0;i<b1.size();i++)
+    	{
+    		BlockSingle bs2=(BlockSingle)b1.get(i);
+    		for(Node n2:LivenessVisitor.graph.graph)
+    		{
+    			BlockSingle b3=(BlockSingle)n2.data;
+	    		if(b3.label.i==bs2.label.i)
+	    		{
+	    			//用原图的block替换cycle里面的block
+	    			b1.set(i, b3);
+	    		} 
+    		}
+    	}
+    	
+    	//将key用原图的替换
+    	BlockSingle b2=(BlockSingle)entry.getKey();
+    	for(Node n2:LivenessVisitor.graph.graph)
+    	{
+    		BlockSingle b3=(BlockSingle)n2.data;
+    		if(b3.label.i==b2.label.i)
+    		{
+    			recycle.put(b3, b1);
+    		}
+    	}
+    	//找到
+    }
     
     
 		
@@ -808,8 +836,8 @@ public class LivenessVisitor implements cfg.Visitor
 		
 		//do real work 
 		this.kind=Liveness_Kind_t.BlockInOut;
-		this.blockLiveIn=new HashMap<Block.T, HashSet<String>>();
-		this.blockLiveOut=new HashMap<Block.T, HashSet<String>>();
+//		this.blockLiveIn=new HashMap<Block.T, HashSet<String>>();
+//		this.blockLiveOut=new HashMap<Block.T, HashSet<String>>();
 		for(Block.T b:LivenessVisitor.retop)
 		{//按照 逆拓扑的顺序执行 
 			if(LivenessVisitor.retop.indexOf(b)==0)
@@ -833,12 +861,14 @@ public class LivenessVisitor implements cfg.Visitor
 				 {
 					 oneBlockOut=this.blockLiveOut.get(b);
 					 oneBlockIn=this.blockLiveIn.get(b);
-						System.out.print("    block  "+bb.label.toString()+" "+" out is: {");
+						System.out.print("    block  "+bb.label.toString()+" "
+					 +" out is: {");
 						for (String s : oneBlockOut)
 							System.out.print(s + ", ");
 						System.out.println("}");
 
-						System.out.print("    block  "+bb.label.toString()+" "+"in is: {");
+						System.out.print("    block  "+bb.label.toString()+" "
+						+"in is: {");
 						for (String s : oneBlockIn)
 							System.out.print(s + ", ");
 						System.out.println("}");
@@ -847,6 +877,78 @@ public class LivenessVisitor implements cfg.Visitor
 			else
 				b.accept(this);
 		}
+		
+		//补上删除的那些节点的BlockInOut
+		
+		
+		    //recycle里面都是原图的block
+		    Set en3=recycle.entrySet();
+		    Iterator it3=en3.iterator();
+		    HashMap<Block.T,Block.T> temp=new HashMap<Block.T,Block.T>();
+		    while(it3.hasNext())
+		    {
+		    	//得到环的起点
+		    	Map.Entry entry=(Map.Entry)it3.next();
+		    	BlockSingle bs3=(BlockSingle) entry.getKey();
+		    	//对涉及到的环上的节点补充In&Out
+		    	ArrayList<Block.T> array=(ArrayList<Block.T>)entry.getValue();
+		    	 HashSet<String> oneBlockIn=new HashSet<String>();
+		   	  	HashSet<String> oneBlockOut=new HashSet<String>();
+		   	  	
+		   	  	oneBlockIn=this.blockLiveIn.get(bs3);
+		   	  	oneBlockOut=this.blockLiveOut.get(bs3);
+		   	  	for(Block.T bs4:array)
+		   	  	{
+		   	  		BlockSingle bs4_1=(BlockSingle)bs4;
+		   	  		if(oneBlockIn==null)
+		   	  		{
+		   	  			if(bs3.label.i==32)
+		   	  			{
+		   	  				System.out.println("你妹");
+		   	  			}
+		   	  			temp.put(bs4_1, bs3);
+		   	  			System.out.println(bs4_1.label+" need "+bs3.label);
+		   	  			continue;
+		   	  		}
+		   	  		this.blockLiveIn.put(bs4_1, oneBlockIn);
+		   	  		this.blockLiveOut.put(bs4_1, oneBlockOut);
+		   	  		
+		   	  		
+		   	  		
+	   	  		
+		   	  	System.out.print("    block  "+bs4_1.label.toString()+" "
+		   	  	+" out is: {");
+				for (String s : oneBlockOut)
+					System.out.print(s + ", ");
+				System.out.println("}");
+
+				System.out.print("    block  "+bs4_1.label.toString()+" "+
+				"in is: {");
+				for (String s : oneBlockIn)
+					System.out.print(s + ", ");
+				System.out.println("}");
+		   	  	}
+		   	  	
+		   	  	
+		    }
+//		    for(int j=0;j<temp.size();j++)
+//		    {
+//		    	 HashSet<String> oneBlockIn=new HashSet<String>();
+//			   	 HashSet<String> oneBlockOut=new HashSet<String>();
+//			   	 oneBlockIn=this.blockLiveIn.get(temp.get(j));
+//			   	 oneBlockOut=this.blockLiveOut.get(temp.get(j));
+//			   	 
+//		    }
+		    
+		    
+		    }
+		    
+		    
+		    //完工。打印测试
+		    
+		    
+		
+		
 		
     
     
@@ -878,7 +980,6 @@ public class LivenessVisitor implements cfg.Visitor
     // statement and transfer
     // Your code here:
 
-  }
 
   @Override
   public void visit(MainMethodSingle m)
