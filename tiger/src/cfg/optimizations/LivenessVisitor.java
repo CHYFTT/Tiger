@@ -62,6 +62,12 @@ public class LivenessVisitor implements cfg.Visitor
   // gen, kill for one transfer
   private HashSet<String> oneTransferGen;
   private HashSet<String> oneTransferKill;
+  
+  private HashSet<String> oneStmIn;
+  private HashSet<String> oneStmOut;
+  
+  private HashSet<String> oneTransferIn;
+  private HashSet<String> oneTransferOut;
 
   // gen, kill for statements
   private HashMap<Stm.T, HashSet<String>> stmGen;
@@ -107,6 +113,12 @@ public class LivenessVisitor implements cfg.Visitor
 
     this.oneTransferGen = new java.util.HashSet<>();
     this.oneTransferKill = new java.util.HashSet<>();
+    
+    this.oneStmIn=new HashSet<String>();
+    this.oneStmOut=new HashSet<String>();
+    
+    this.oneTransferIn=new HashSet<String>();
+    this.oneTransferOut=new HashSet<String>();
 
     this.stmGen = new java.util.HashMap<>();
     this.stmKill = new java.util.HashMap<>();
@@ -164,6 +176,34 @@ public class LivenessVisitor implements cfg.Visitor
 //    this.oneTransferKill = new java.util.HashSet<>();
 //    return temp;
 //  }
+  
+  private java.util.HashSet<String> getOneStmInAndClear()
+  {
+    java.util.HashSet<String> temp = this.oneStmIn;
+    this.oneStmIn = new java.util.HashSet<>();
+    return temp;
+  }
+
+  private java.util.HashSet<String> getOneStmOutAndClear()
+  {
+    java.util.HashSet<String> temp = this.oneStmOut;
+    this.oneStmOut = new java.util.HashSet<>();
+    return temp;
+  }
+
+  private java.util.HashSet<String> getOneTransferInAndClear()
+  {
+    java.util.HashSet<String> temp = this.oneTransferIn;
+    this.oneTransferIn = new java.util.HashSet<>();
+    return temp;
+  }
+
+  private java.util.HashSet<String> getOneTransferOutAndClear()
+  {
+    java.util.HashSet<String> temp = this.oneTransferOut;
+    this.oneTransferOut = new java.util.HashSet<>();
+    return temp;
+  }
 
   // /////////////////////////////////////////////////////
   // operand
@@ -261,7 +301,7 @@ public class LivenessVisitor implements cfg.Visitor
   public void visit(If s)
   {
     // Invariant: accept() of operand modifies "gen"
-    this.oneTransferGen.add(s.operand.toString());
+    this.oneTransferKill.add(s.operand.toString());
     return;
   }
 
@@ -361,8 +401,9 @@ public class LivenessVisitor implements cfg.Visitor
       //stmGen和stmKill只有一个，里面都放着每个stm的kill和gen
       this.stmGen.put(s, this.oneStmGen);
       this.stmKill.put(s, this.oneStmKill);
-      if (control.Control.isTracing("liveness.step1")) {
-        System.out.print("\ngen, kill for statement:");
+      if (control.Control.isTracing("liveness.step1")) 
+      {
+        System.out.print("\ngen, kill for statement:"+s+"\n");
         System.out.print("gen is:");
         for (String str : this.oneStmGen) {
           System.out.print(str + ", ");
@@ -379,9 +420,7 @@ public class LivenessVisitor implements cfg.Visitor
     this.oneTransferKill = new java.util.HashSet<>();
     b.transfer.accept(this);
     /*
-     * 执行完后会改变oneStmGen
-     * 
-     * this.oneTransfer里面是空的？？？
+     * 执行完后会改变oneTransfer
      */
     this.transferGen.put(b.transfer, this.oneTransferGen);
     this.transferKill.put(b.transfer, this.oneTransferKill);
@@ -398,13 +437,16 @@ public class LivenessVisitor implements cfg.Visitor
       }
       System.out.println("");
     }
+      
+      
+//      System.out.println("Stm&&Transfer gen and kill___________________finished");
     return;
     /*
      * 之行完这个方法后，this.stmGen里面放着这个block的所有语句，以及与这个语句对应的gen和kill的set
      */
   }
   
-  private void calculateBlockTransferGenKill(BlockSingle b)
+  private void calculateBlockGenKill(BlockSingle b)
   {
 	  // 计算block的Gen和Kill
 	  java.util.HashSet<String> oneBlockGen=new java.util.HashSet<String>();
@@ -501,6 +543,90 @@ public class LivenessVisitor implements cfg.Visitor
 				System.out.println("}");
 			}
   }
+  
+  private void calculateStmInOut(BlockSingle b)
+  {
+	  System.out.println("StmInOut start----------------------");
+	  //TODO
+	  //得到这个block里面每个语句的Gen和Kill。还有Transfer的Gen和Kill
+	  this.calculateStmTransferGenKill(b);
+	  //执行后StmGen和TransferGen都有了值，即得到了这个block每条语句的Gen和Kill
+	  /*对Stm逆序处理
+	   * 将block的out作为Transfer的out
+	   */
+	  //先处理Transfer
+	 this.oneTransferIn=new HashSet<String>();
+	 this.oneTransferOut=new HashSet<String>();
+	 //计算TransferOut
+	 oneTransferOut=this.blockLiveOut.get(b);
+	 this.transferLiveOut.put(b.transfer, oneTransferOut);
+	  //计算TransferIn
+	 HashSet<String> temp=new HashSet<String>();
+	 temp.addAll(oneTransferOut);
+	 temp.removeAll(this.oneTransferKill);
+	 this.oneTransferGen.addAll(temp);
+	 oneTransferIn=this.oneTransferGen;
+	 this.transferLiveIn.put(b.transfer, oneTransferIn);
+	 
+	 
+     if (control.Control.isTracing("liveness.step4")) 
+     {
+       System.out.print("\nIn, Out for Transfer:"+b.transfer.toString()+"\n");
+       System.out.print("In is:");
+       for (String str : oneTransferIn) {
+         System.out.print(str + ", ");
+       }
+       System.out.print("\nOut is:");
+       for (String str : oneTransferOut) {
+         System.out.print(str + ", ");
+       }
+       System.out.println("");
+     }
+	  
+	  //逆序处理Stm
+	  for(int i=b.stms.size()-1;i>=0;i--)
+	  {
+		  //这条Stm的kill&&gen
+		  oneStmKill=this.stmKill.get(b.stms.get(i));
+		  oneStmGen=this.stmGen.get(b.stms.get(i));
+		  
+		//计算Stm的Out
+		  for(int j=i;j<b.stms.size()-1;j++)
+		  {
+			  HashSet<String> tempIn=new HashSet<String>();
+			  tempIn=this.stmLiveIn.get(b.stms.get(j+1));
+			  oneStmOut.addAll(tempIn);
+		  }
+		  oneStmOut.addAll(oneTransferIn);//StmOut计算完成
+		  this.stmLiveOut.put(b.stms.get(i), oneStmOut);
+		  
+		  //计算Stm的In
+		  temp.addAll(oneStmOut);
+		  temp.removeAll(oneStmKill);//out-kill
+		  oneStmGen.addAll(temp);//gen∪(out-kill)
+		  oneStmIn.addAll(oneStmGen);
+		  this.stmLiveIn.put(b.stms.get(i), oneStmIn);
+		  
+	//打印测试	  
+	      if (control.Control.isTracing("liveness.step4")) 
+	      {
+	        System.out.print("\nIn, Out for statement:"+b.stms.get(i)+"\n");
+	        System.out.print("In is:");
+	        for (String str : this.oneStmIn) {
+	          System.out.print(str + ", ");
+	        }
+	        System.out.print("\nOut is:");
+	        for (String str : this.oneStmOut) {
+	          System.out.print(str + ", ");
+	        }
+	        System.out.println("");
+	      }
+		  
+		  
+		  
+	  }
+	  System.out.println("StmInOut finished~~~~~~~~~~~~~~~~~~~~~");
+  }
 
   // block
   @Override
@@ -511,11 +637,13 @@ public class LivenessVisitor implements cfg.Visitor
       calculateStmTransferGenKill(b);
       break;
     case BlockGenKill:
-    	calculateBlockTransferGenKill(b);
+    	calculateBlockGenKill(b);
     	break;
     case BlockInOut:
     	calculateBlockInOut(b);
     	break;
+    case StmInOut:
+    	calculateStmInOut(b);
     	
     	
     default:
@@ -531,8 +659,6 @@ public class LivenessVisitor implements cfg.Visitor
   {
 	  LivenessVisitor.top.clear();
 	  LivenessVisitor.retop.clear();
-	  
-	  
 	  
     // Four steps:
     // Step 1: calculate the "gen" and "kill" sets for each
@@ -685,116 +811,6 @@ public class LivenessVisitor implements cfg.Visitor
 		BlockSingle bb=(BlockSingle)b;
 		System.out.println(bb.label);
 	}
-    
-    
-    
-  
-    
-    
-    
-    
-    
-/*    //图的拓扑排序        
-    LinkedList<Block.T> top=new LinkedList<Block.T>();
-    boolean isFirst=true;
-    boolean topChanged=false;
-    int locate=0;
-    int size=graph.graph.size();
-    System.out.println("top sort---------");
-		while (top.size() != size)
-		{
-			for (int i = 0; i <= graph.graph.size() - 1; i++) 
-			{
-				Graph<Block.T>.Node b = graph.graph.get(i);
-				if (isFirst) 
-				{
-					if (b.fr.isEmpty() && (!top.contains(b.data))) 
-					{//b没有入边，且不在top中
-						top.add(b.data);
-						locate=i;//记录位置，graph中哪一个节点进的top
-						topChanged=true;
-						BlockSingle bbb = (BlockSingle)b.data;
-						System.out.println(bbb.label.toString());
-						
-					}
-					isFirst = false;
-				} 
-				else
-				{
-					if (b.fr.isEmpty() && (!top.contains(b.data)))
-					{
-						top.add(b.data);
-						locate=i;//记录位置，graph中哪一个节点进的top
-						topChanged=true;
-						BlockSingle bbb = (BlockSingle)b.data;
-						System.out.println(bbb.label.toString());
-					} else if ((!top.contains(b.data))) 
-					{//可以有入边，但入边的节点已经在top中才行
-						boolean ok = true;
-						for (Block.T block : b.fr)
-						{
-							if (!top.contains(block)) 
-							{
-								ok = false;
-								break;
-							}
-						}
-						if (ok) 
-						{
-							top.add(b.data);
-							locate=i;//记录位置，graph中哪一个节点进的top
-							topChanged=true;
-							BlockSingle bbb = (BlockSingle)b.data;
-							System.out.println(bbb.label.toString());
-						}
-					} 
-					else
-						topChanged=false;
-				}
-			}
-			//for循环结束
-			
-//			  每一次for循环必须要有一个节点进入top。否则就会出现死循环，即找不到没有入度的节点。
-//			  所以一旦出现这种情况，要特殊处理。
-//			 选上一次进top的节点所指向的节点进top
-			 
-			if (!topChanged) 
-			{
-				Graph<Block.T>.Node temp = graph.graph.get(locate);
-				Edge edge = temp.edges.getFirst();
-				Graph<Block.T>.Node to = edge.to;
-				int k = graph.graph.indexOf(to);
-				top.add(to.data);
-				locate = k;
-				BlockSingle bbb = (BlockSingle) to.data;
-				System.out.println(bbb.label);
-			}
-			
-			
-		}
-		//reverse
-		System.out.println("reverse top sort");
-		for (int j = 0, k = top.size()-1; j<k;j++,k--) 
-		{
-			BlockSingle temp=(BlockSingle)top.get(j);
-			top.set(j, top.get(k));
-			top.set(k, temp);
-		}
-		for(Block.T b:top)
-		{
-			BlockSingle bb=(BlockSingle)b;
-			System.out.println(bb.label);
-		}
-		System.out.println("this.top--------------------------");
-		LivenessVisitor.top.addAll(top);
-		for(Block.T b:LivenessVisitor.top)
-		{
-			BlockSingle bb=(BlockSingle)b;
-			System.out.println(bb.label);
-		}
-		
-*/		
-    
 	//先重造retop,为了能使用原来的map，必须用原图的block替换retop的。现在retop的block是深度克隆的。
     Set<Entry<T, ArrayList<T>>> en2=cycle.entrySet();
     Iterator<Entry<T, ArrayList<T>>> it2=en2.iterator();
@@ -912,73 +928,21 @@ public class LivenessVisitor implements cfg.Visitor
 		   	  		}
 		   	  		this.blockLiveIn.put(bs4_1, oneBlockIn);
 		   	  		this.blockLiveOut.put(bs4_1, oneBlockOut);
-		   	  		
-		   	  		
-		   	  		
-	   	  		
-		   	  	System.out.print("    block  "+bs4_1.label.toString()+" "
-		   	  	+" out is: {");
-				for (String s : oneBlockOut)
-					System.out.print(s + ", ");
-				System.out.println("}");
-
-				System.out.print("    block  "+bs4_1.label.toString()+" "+
-				"in is: {");
-				for (String s : oneBlockIn)
-					System.out.print(s + ", ");
-				System.out.println("}");
-		   	  	}
-		   	  	
-		   	  	
-		    }
-//		    for(int j=0;j<temp.size();j++)
-//		    {
-//		    	 HashSet<String> oneBlockIn=new HashSet<String>();
-//			   	 HashSet<String> oneBlockOut=new HashSet<String>();
-//			   	 oneBlockIn=this.blockLiveIn.get(temp.get(j));
-//			   	 oneBlockOut=this.blockLiveOut.get(temp.get(j));
-//			   	 
-//		    }
-		    
-		    
-		    }
-		    
-		    
-		    //完工。打印测试
-		    
-		    
-		
-		
-		
-    
-    
-	/*	
-		//用DFS得到节点的联通情况
-		HashSet<Graph<Block.T>.Node> dfs=new HashSet<Graph<Block.T>.Node>();
-		for(Graph<Block.T>.Node node:LivenessVisitor.graph.graph)
-		{
-			BlockSingle d=(BlockSingle)node.data;
-			dfs=LivenessVisitor.graph.dfs(d);
-			Iterator it=dfs.iterator();
-			System.out.print(d.label+"------____");
-			while(it.hasNext())
-			{
-				
-				Graph<Block.T>.Node dd=(Node)it.next();
-				BlockSingle ddd=(BlockSingle)dd.data;
-				System.out.print(ddd.label+",");
 			}
-			System.out.println("");
-			
-		}
-		
-		
-    */
-    
 
+		}
     // Step 4: calculate the "liveIn" and "liveOut" sets for each
     // statement and transfer
     // Your code here:
+		    this.kind=Liveness_Kind_t.StmInOut;
+		    for (Block.T block : m.blocks) {
+		        block.accept(this);
+		      }
+
+  
+  
+  
+  }
 
 
   @Override

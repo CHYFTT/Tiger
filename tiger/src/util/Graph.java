@@ -261,10 +261,6 @@ public class Graph<X> implements Serializable
 		if(visited.contains(n))
 		{
 			BlockSingle bs=(BlockSingle)n.data;
-			if(bs.label.i==32)
-			{
-				System.out.println("你妹！！！！！");
-			}
 			int j;
             if((j=trace.indexOf(n))!=-1)
             {//只输出trace的一部分。j-i的部分
