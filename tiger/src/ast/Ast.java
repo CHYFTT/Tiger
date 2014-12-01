@@ -261,6 +261,20 @@ public class Ast
       public String type; // type of first field "exp"
       public java.util.LinkedList<Type.T> at; // arg's type
       public Type.T rt;
+      
+      public Call(//必须要有，在opt时会用到
+    		  T exp,String id,java.util.LinkedList<T> args,
+    		  String type,java.util.LinkedList<Type.T> at,Type.T rt)
+      {
+    	  this.exp=exp;
+    	  this.id=id;
+    	  this.args=args;
+    	  this.type=type;
+    	  this.at=at;
+    	  this.rt=rt;
+    			  
+    	  
+      }
 
       public Call(T exp, String id, java.util.LinkedList<T> args,int linenum)
       {
@@ -600,6 +614,7 @@ public class Ast
       }
     }
 
+
   }// end of expression
 
   // /////////////////////////////////////////////////////////
@@ -619,8 +634,18 @@ public class Ast
       public Exp.T exp;
       public Type.T type; // type of the id,在elab时会赋值
       public boolean isField;//在elab时会赋值
-    
-      public Assign(String id, Exp.T exp,int linenum)
+      
+      
+    //在opt中会用
+      public Assign(String id, ast.Ast.Exp.T exp, ast.Ast.Type.T type,
+			boolean isField,int linenum) {
+		this.id = id;
+		this.exp = exp;
+		this.type = type;
+		this.isField = isField;
+		this.linenum=linenum;
+	}
+	public Assign(String id, Exp.T exp,int linenum)
       {
         this.id = id;
         this.exp = exp;
@@ -657,8 +682,19 @@ public class Ast
       public Type.T tyep;//type of the id
       public boolean isField;
       
-
-      public AssignArray(String id, Exp.T index, Exp.T exp,int linenum)
+      
+      
+//在opt中会用
+      public AssignArray(String id, ast.Ast.Exp.T index, ast.Ast.Exp.T exp,
+			ast.Ast.Type.T tyep, boolean isField,int linenum) {
+		this.id = id;
+		this.index = index;
+		this.exp = exp;
+		this.tyep = tyep;
+		this.isField = isField;
+		this.linenum=linenum;
+	}
+	public AssignArray(String id, Exp.T index, Exp.T exp,int linenum)
       {
         this.id = id;
         this.index = index;

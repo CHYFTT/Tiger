@@ -2,35 +2,25 @@ package parser;
 
 import java.util.LinkedList;
 
-import ast.Ast;
 import ast.Ast.Class;
 import ast.Ast.Class.ClassSingle;
 import ast.Ast.Dec;
 import ast.Ast.Dec.DecSingle;
 import ast.Ast.Exp;
-import ast.Ast.MainClass;
 import ast.Ast.Method;
 import ast.Ast.Method.MethodSingle;
 import ast.Ast.Program;
 import ast.Ast.Type;
 import ast.Ast.Exp.Call;
 import ast.Ast.Exp.Id;
-import ast.Ast.Exp.Lt;
 import ast.Ast.Exp.NewObject;
-import ast.Ast.Exp.Num;
-import ast.Ast.Exp.Sub;
 import ast.Ast.Exp.T;
-import ast.Ast.Exp.This;
-import ast.Ast.Exp.Times;
 import ast.Ast.Exp.ArraySelect;
 import ast.Ast.MainClass.MainClassSingle;
 import ast.Ast.Program.ProgramSingle;
-import ast.Ast.Stm.Assign;
 import ast.Ast.Stm.If;
 import ast.Ast.Stm.Print;
 import ast.Ast.Stm;
-
-import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory.Default;
 
 import lexer.Lexer;
 import lexer.Token;
@@ -115,6 +105,17 @@ public class Parser {
 		int i;
 		
 		switch (current.kind) {
+		case TOKEN_SUB:
+			advance();
+			if(current.kind==Kind.TOKEN_NUM)
+			{
+				int j=Integer.parseInt(current.lexeme);
+				i=-j;
+				advance();
+				return new Exp.Num(i, linenum);
+			}
+			else
+				error();
 		case TOKEN_LPAREN:
 			advance();
 			exp=parseExp();

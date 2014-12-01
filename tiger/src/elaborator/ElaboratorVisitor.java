@@ -43,7 +43,7 @@ public class ElaboratorVisitor implements ast.Visitor
   public ClassTable classTable; // symbol table for class
   public MethodTable methodTable; // symbol table for each method
   public String currentClass; // the class name being elaborated
-  public Type.T type; // type of the expression being elaborated
+  public  Type.T type; // type of the expression being elaborated
   public String currentMethod;
   public int linenum;
   public ElaboratorVisitor()
@@ -111,6 +111,8 @@ private void error()
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
 		  error(Error.MISTYPE,e.linenum);
+	  if(!t.toString().equals("@boolean"))
+		  error(Error.MISTYPE,e.linenum);//&&两边必须为&&
 	  return;
   }
 

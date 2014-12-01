@@ -1,5 +1,7 @@
 package codegen.C;
 
+import java.util.HashSet;
+
 import codegen.C.Ast.Class.ClassSingle;
 import codegen.C.Ast.Dec;
 import codegen.C.Ast.Dec.DecSingle;
@@ -19,6 +21,7 @@ import codegen.C.Ast.Exp.Sub;
 import codegen.C.Ast.Exp.This;
 import codegen.C.Ast.Exp.Times;
 import codegen.C.Ast.MainMethod.MainMethodSingle;
+import codegen.C.Ast.MainMethod.T;
 import codegen.C.Ast.Method;
 import codegen.C.Ast.Method.MethodSingle;
 import codegen.C.Ast.Program.ProgramSingle;
@@ -29,6 +32,7 @@ import codegen.C.Ast.Stm.Block;
 import codegen.C.Ast.Stm.If;
 import codegen.C.Ast.Stm.Print;
 import codegen.C.Ast.Stm.While;
+import codegen.C.Ast.Type;
 import codegen.C.Ast.Type.ClassType;
 import codegen.C.Ast.Type.Int;
 import codegen.C.Ast.Type.IntArray;
@@ -40,6 +44,8 @@ public class PrettyPrintVisitor implements Visitor
 {
   private int indentLevel;
   private java.io.BufferedWriter writer;
+  private HashSet<String> redec=new HashSet<String>();
+  
 
   public PrettyPrintVisitor()
   {
@@ -117,10 +123,16 @@ public class PrettyPrintVisitor implements Visitor
 	  /*
 	   * 在这里面与jasmin不同的是，C语言的调用不需要输出调用函数的参数
 	   */
-    this.say("(" + e.assign + "=");
-    e.exp.accept(this);
+	  if(!this.redec.contains(e.assign))
+		  this.say("(" + e.assign + "=");
+	  else
+		  this.say("(frame." + e.assign + "=");
+    e.exp.accept(this);//n=this->r
     this.say(", ");
-    this.say(e.assign + "->vptr->" + e.id + "(" + e.assign);
+    if(!this.redec.contains(e.assign))
+    	this.say(e.assign + "->vptr->" + e.id + "(" + e.assign);
+    else
+    	this.say("frame."+e.assign + "->vptr->" + e.id + "(frame." + e.assign);
     int size = e.args.size();
     if (size == 0) {
       this.say("))");
@@ -138,9 +150,16 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(Id e)
   {
 	  if(e.isField==false)
-      this.say(e.id);
+	  {
+		  if(this.redec.contains(e.id))
+			  this.say("frame."+e.id);
+		  else
+			  this.say(e.id);
+	  }
 	  else
-	  this.say("this->"+e.id);
+	  {
+		  this.say("this->"+e.id);
+	  }
 	 
   }
 
@@ -231,6 +250,9 @@ public class PrettyPrintVisitor implements Visitor
 	   this.printSpaces();
 		if(s.isField==false)
 		{
+			if(this.redec.contains(s.id))
+				this.say("frame."+s.id+" = ");
+			else
 			this.say(s.id + " = ");
 		}
 		else 
@@ -248,6 +270,9 @@ public class PrettyPrintVisitor implements Visitor
 	  this.printSpaces();
 	  if(s.isField==false)
 	  {
+		  if(this.redec.contains(s.id))
+			  this.say("frame."+s.id+"[");
+		  else
 		  this.say(s.id+"[");
 	  }
 	  else
@@ -335,7 +360,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArray t)
   {
-	  this.say("int* ");
+	  this.say("int* ");//貌似没用
   }
 
   // dec
@@ -350,6 +375,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(MethodSingle m)
   {
+	 this.redec.clear();
     m.retType.accept(this);//处理返回值
     this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
     int size = m.formals.size();
@@ -364,13 +390,25 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln(")");
     
     
-    
+    //TODO 并不是所有的局部变量声明都需要打印
     this.sayln("{");//局部变量声明
-    for (Dec.T d : m.locals) {
-      DecSingle dec = (DecSingle) d;
-      this.say("  ");
-      dec.type.accept(this);//类型
-      this.say(" " + dec.id + ";\n");//id
+    
+  //Lab4
+		this.printSpaces();
+		this.sayln("struct " + m.classId + "_" + m.id + "_gc_frame frame;");
+    
+    for (Dec.T d : m.locals)
+    {
+		DecSingle dec = (DecSingle) d;
+		if(!(dec.type instanceof Type.ClassType || 
+				dec.type instanceof Type.IntArray))
+		{
+		this.say("  ");
+		dec.type.accept(this);// 类型
+		this.say(" " + dec.id + ";\n");//id
+		}
+		else
+			this.redec.add(dec.id);
     }
     this.sayln("");
     for (Stm.T s : m.stms)
@@ -385,15 +423,32 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(MainMethodSingle m)
   {
+	  this.redec.clear();
     this.sayln("int Tiger_main ()");
     this.sayln("{");
     
-    for (Dec.T dec : m.locals) {
-      this.say("  ");
-      DecSingle d = (DecSingle) dec;
-      d.type.accept(this);
-      this.say(" ");
-      this.sayln(d.id + ";");
+    //Lab4:
+
+    
+    this.indent();
+    this.printSpaces();
+    this.sayln("struct Tiger_main_gc_frame frame;");
+    this.unIndent();
+    
+    for (Dec.T dec : m.locals) 
+    {
+			this.say("  ");
+			DecSingle d = (DecSingle) dec;
+			if (!(d.type instanceof Type.ClassType || 
+					d.type instanceof Type.IntArray)) 
+			{//当不是Class也不是IntArray时才打印
+				d.type.accept(this);
+				this.say(" ");
+				this.sayln(d.id + ";");
+			}
+			else
+				this.redec.add(d.id);
+      
     }
     
     m.stm.accept(this);
@@ -442,6 +497,69 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("};\n");
     return;
   }
+  //TODO outputGCstack
+  private void outputGCstack(codegen.C.Ast.MainMethod.MainMethodSingle mainMethod)
+  {
+	  	this.sayln("struct Tiger_main_gc_frame");
+		this.sayln("{");
+		this.indent();
+		this.printSpaces();
+		this.sayln("void *prev_;");
+		this.printSpaces();
+		this.sayln("char *arguments_gc_map;");
+		this.printSpaces();
+		this.sayln("int *arguments_base_address;");
+		this.printSpaces();
+		this.sayln("int locals_gc_map;");
+		
+		for(codegen.C.Ast.Dec.T d:mainMethod.locals)
+		{
+			DecSingle dd=(DecSingle)d;
+			if(dd.type instanceof ClassType||dd.type instanceof IntArray)
+			{
+				this.printSpaces();
+				dd.accept(this);
+				//在set中加入这个声明
+				
+				this.say(" ");
+			    this.sayln(dd.id + ";");
+			}
+		}
+		
+		this.unIndent();
+		this.sayln("};\n");
+	  
+  }
+  
+  private void outputGcstack(codegen.C.Ast.Method.MethodSingle m)
+  {
+	  this.sayln("struct "+m.classId+"_"+m.id+"_gc_frame");
+		this.sayln("{");
+		this.indent();
+		this.printSpaces();
+		this.sayln("void *prev_;");
+		this.printSpaces();
+		this.sayln("char *arguments_gc_map;");
+		this.printSpaces();
+		this.sayln("int *arguments_base_address;");
+		this.printSpaces();
+		this.sayln("int locals_gc_map;");
+		
+		for(codegen.C.Ast.Dec.T d:m.locals)
+		{
+			DecSingle dd=(DecSingle)d;
+			if(dd.type instanceof ClassType||dd.type instanceof IntArray)
+			{
+				this.printSpaces();
+				dd.accept(this);
+				this.say(" ");
+			    this.sayln(dd.id + ";");
+			}
+		}
+		
+		this.unIndent();
+		this.sayln("};\n");
+  }
 
   // class
   @Override
@@ -483,13 +601,17 @@ public class PrettyPrintVisitor implements Visitor
 
     this.sayln("// This is automatically generated by the Tiger compiler.");
     this.sayln("// Do NOT modify!\n");
+    
+    this.sayln("extern void *previous=0;");
   
 
+    //TODO
     this.sayln("// structures");
     for (codegen.C.Ast.Class.T c : p.classes) {//处理类的声明
       c.accept(this);
     }
 
+    //TODO
     this.sayln("// vtables structures");
     for (Vtable.T v : p.vtables) {//虚函数表，里面放有函数指针.注意！！！函数指针需要带参数。
       v.accept(this);				//这里为了可以打印函数指针的参数，对classTable的初始化
@@ -515,15 +637,28 @@ public class PrettyPrintVisitor implements Visitor
         this.sayln(");");
     }
     
-    
+    //TODO
     this.sayln("// vtables");//虛函数表初始化-----在初始化之前必须先声明方法
     for (Vtable.T v : p.vtables) {
       outputVtable((VtableSingle) v);
     }
     this.sayln("");
     
+    //TODO GC stack frames
+    this.sayln("//GC stack frames");
+    //先打印main
+    outputGCstack((codegen.C.Ast.MainMethod.MainMethodSingle)p.mainMethod);
+    for(codegen.C.Ast.Method.T m:p.methods)
+    {
+    	outputGcstack((MethodSingle)m);
+    }
     
+    
+    //TODO // memory GC maps
+    this.sayln("// memory GC maps");
 
+    
+    //TODO
     this.sayln("// methods");
     for (Method.T m : p.methods) {//方法的定义------在方法定义以前，就应该初始化虚函数表
     							//但是，虚函数表的初始化又需要方法名，所以在方法定义之前，

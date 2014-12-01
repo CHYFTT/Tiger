@@ -3,7 +3,6 @@ package lexer;
 import static control.Control.ConLexer.dump;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PushbackInputStream;
 
 import lexer.Token.Kind;
@@ -159,7 +158,7 @@ public class Lexer {
 			else
 				return behind;
 		}
-		case '-': {
+		case '-': {//需要特殊处理一下!!!在parser中在判断"-"到底是减号还是负号。
 			cmp = printTokenforspace(c);
 			if (cmp == null)
 				return new Token(Kind.TOKEN_SUB, linenum);
@@ -212,26 +211,27 @@ public class Lexer {
 	}
 
 	public Token printTokenforspace(int c) throws IOException {
-		if (c == 38 && s == "&") {
+		if (c == '&' && s == "&") {
+			//s里面是&，又读到&
 			behind = new Token(Kind.TOKEN_AND, linenum);
 			s = "";
-		} else if (s != "") {
+		} else if (s != "") {//s不为空，将s里面的变为token
 			Token token = new Token();
 			Kind k = token.getkey(s);
 			
 			behind = new Token(k, linenum,s);
 			
-			if (c == 38)
+			if (c == '&')//读到的是&
 				s = "&";
 			else
 				s = "";
-			if (c != 32 && c != 38)
+			if (c != 32 && c != '&')//如果不是sp，不是&，需要回退
 				fstream.unread(c);
 			return behind;
 
-		} else if (s == "" && c == 38) {
+		} else if (s == "" && c == '&') {//读到第一个&的情况
 			s = "&";
-			behind = null;
+			behind = null;//并不返回token
 		} else
 			return null;
 		return behind;
@@ -242,7 +242,7 @@ public class Lexer {
 		Token t = null;
 
 		try {
-			while (t == null)
+			while (t == null)//当t为null时，一直读token
 				t = this.nextTokenInternal();
 		} catch (Exception e) {
 			e.printStackTrace();

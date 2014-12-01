@@ -64,17 +64,27 @@ public class CommandLine
                     System.exit(1);
                   }
                   return;
-                }), new Arg<Object>("dump", "{ast}",
-                "dump information about the given ir", Kind.String, (ss) -> {
-                  String s = (String) ss;
-                  if (s.equals("ast")) {
-                    control.Control.ConAst.dumpAst = true;
-                  } else {
-                    System.out.println("bad argument: " + s);
-                    output();
-                    System.exit(1);
+                }), new Arg<Object>("dump", "<ir>",
+                "dump information about the ir", Kind.String, new F<Object>() {
+                  @Override
+                  public void f(Object ss)
+                  {
+                    String s = (String) ss;
+                    if (s.equals("ast")) {
+                      control.Control.ConAst.dumpAst = true;
+                    } else if (s.equals("c") || s.equals("C")) {
+                      control.Control.ConAst.dumpC = true;
+                    } else if (s.equals("cyclone")) {
+                      control.Control.ConAst.dumpCyclone = true;
+                    } else if (s.equals("dot")) {
+                      control.Control.ConAst.dumpDot = true;
+                    } else {
+                      System.out.println("bad argument: " + s);
+                      output();
+                      System.exit(1);
+                    }
+                    return;
                   }
-                  return;
                 }), new Arg<Object>("elab", "<arg>",
                 "dump information about elaboration", Kind.String, (ss) -> {
                   String s = (String) ss;
@@ -120,6 +130,10 @@ public class CommandLine
                 "set the name of the output file", Kind.String, (Object s) -> {
                   Control.ConCodeGen.outputName = (String) s;
                   return;
+                }), new Arg<Object>("skip", "<pass>",
+                "which compile pass to skip", Kind.String, (s) -> {
+                  Control.addPass((String) s);
+                  return;
                 }), new Arg<Object>("testFac", null,
                 "whether or not to test the Tiger compiler on Fac.java",
                 Kind.Empty, (s) -> {
@@ -129,6 +143,54 @@ public class CommandLine
                 "whether or not to test the lexer", Kind.Empty, (s) -> {
                   Control.ConLexer.test = true;
                   return;
+                }), new Arg<Object>("trace", "<method>",
+                "which method to trace", Kind.String, new F<Object>() {
+                  @Override
+                  public void f(Object s)
+                  {
+                    Control.addTrace((String) s);
+                    return;
+                  }
+                }), new Arg<Object>("verbose", "{0|1|2}", "how verbose to be",
+                Kind.Int, new F<Object>() {
+                  @Override
+                  public void f(Object n)
+                  {
+                    int i = (Integer) n;
+                    switch (i) {
+                    case 0:
+                      Control.verbose = Control.Verbose_t.Silent;
+                      break;
+                    case 1:
+                      Control.verbose = Control.Verbose_t.Pass;
+                      break;
+                    default:
+                      Control.verbose = Control.Verbose_t.Detailed;
+                      break;
+                    }
+                    return;
+                  }
+                }), new Arg<Object>("visualize", "<bmp|pdf|ps|jpg>",
+                "to visualize a graph", Kind.String, new F<Object>() {
+                  @Override
+                  public void f(Object ss)
+                  {
+                    String s = (String) ss;
+                    if (s.equals("bmp")) {
+                      control.Control.visualize = control.Control.Visualize_Kind_t.Bmp;
+                    } else if (s.equals("pdf")) {
+                      control.Control.visualize = control.Control.Visualize_Kind_t.Pdf;
+                    } else if (s.equals("ps")) {
+                      control.Control.visualize = control.Control.Visualize_Kind_t.Ps;
+                    } else if (s.equals("jpg")) {
+                      control.Control.visualize = control.Control.Visualize_Kind_t.Jpg;
+                    } else {
+                      System.out.println("bad argument: " + s);
+                      output();
+                      System.exit(1);
+                    }
+                    return;
+                  }
                 }));
   }
 

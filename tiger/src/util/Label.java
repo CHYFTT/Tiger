@@ -1,9 +1,15 @@
 package util;
 
-public class Label
+import java.io.Serializable;
+
+public class Label implements Serializable
 {
-  private int i;
-  private static int count = 0;
+  /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public int i;
+	private static int count = 0;
 
   public Label()
   {
