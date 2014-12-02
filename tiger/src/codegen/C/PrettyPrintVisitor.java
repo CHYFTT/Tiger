@@ -1,6 +1,8 @@
 package codegen.C;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import codegen.C.Ast.Class.ClassSingle;
 import codegen.C.Ast.Dec;
@@ -45,7 +47,8 @@ public class PrettyPrintVisitor implements Visitor
   private int indentLevel;
   private java.io.BufferedWriter writer;
   private HashSet<String> redec=new HashSet<String>();
-  
+  private HashMap<String,LinkedList<Tuple>> classLocal=
+		  new HashMap<String,LinkedList<Tuple>>();
 
   public PrettyPrintVisitor()
   {
@@ -290,7 +293,6 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Block s)
   {
-	  this.sayln("");
 	  this.printSpaces();
 	  this.sayln("{");
 	  this.indent();
@@ -337,7 +339,7 @@ public class PrettyPrintVisitor implements Visitor
 	  this.printSpaces();
 	  this.say("while (");
 	  s.condition.accept(this);
-	  this.say(")");
+	  this.sayln(")");
 	  this.indent();
 	  s.body.accept(this);
 	  this.unIndent();
@@ -375,7 +377,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(MethodSingle m)
   {
-	 this.redec.clear();
+	 this.redec.clear();//每个方法都可以有重名的变量，因此在此处刷新。
     m.retType.accept(this);//处理返回值
     this.say(" " + m.classId + "_" + m.id + "(");//Fac_ComputeFac
     int size = m.formals.size();
@@ -390,12 +392,26 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln(")");
     
     
-    //TODO 并不是所有的局部变量声明都需要打印
+    // 并不是所有的局部变量声明都需要打印
     this.sayln("{");//局部变量声明
     
   //Lab4
 		this.printSpaces();
 		this.sayln("struct " + m.classId + "_" + m.id + "_gc_frame frame;");
+		
+	    //初始化frame
+	    this.printSpaces();
+	    this.sayln("frame.prev_=previous;");
+	    this.printSpaces();
+	    this.sayln("previous=&frame;");
+	    this.printSpaces();
+	    this.sayln("frame.arguments_gc_map = "+m.classId
+	    		+"_"+m.id+"_arguments_gc_map;");
+	    this.printSpaces();
+	    this.sayln("frame.arguments_base_address = &this;");
+	    this.printSpaces();
+	    this.sayln("frame.locals_gc_map = "+m.classId
+	    		+"_"+m.id+"_locals_gc_map;");
     
     for (Dec.T d : m.locals)
     {
@@ -410,9 +426,14 @@ public class PrettyPrintVisitor implements Visitor
 		else
 			this.redec.add(dec.id);
     }
+    
     this.sayln("");
     for (Stm.T s : m.stms)
       s.accept(this);
+    this.sayln("");
+    this.printSpaces();
+    this.sayln("previous=frame.prev_;");
+    
     this.say("  return ");
     m.retExp.accept(this);
     this.sayln(";");
@@ -433,6 +454,17 @@ public class PrettyPrintVisitor implements Visitor
     this.indent();
     this.printSpaces();
     this.sayln("struct Tiger_main_gc_frame frame;");
+    //初始化frame
+    this.printSpaces();
+    this.sayln("frame.prev_=previous;");
+    this.printSpaces();
+    this.sayln("previous=&frame;");
+    this.printSpaces();
+    this.sayln("frame.arguments_gc_map = 0;");
+    this.printSpaces();
+    this.sayln("frame.arguments_base_address = 0;");
+    this.printSpaces();
+    this.sayln("frame.locals_gc_map = Tiger_main_locals_gc_map;");
     this.unIndent();
     
     for (Dec.T dec : m.locals) 
@@ -463,6 +495,10 @@ public class PrettyPrintVisitor implements Visitor
   {
     this.sayln("struct " + v.id + "_vtable");
     this.sayln("{");
+    
+    this.printSpaces();
+    this.sayln("char* "+v.id+"_gc_map;");
+    
     for (codegen.C.Ftuple t : v.ms) {
       this.say("  ");
       t.ret.accept(this);//方法的返回值
@@ -490,6 +526,25 @@ public class PrettyPrintVisitor implements Visitor
   {
     this.sayln("struct " + v.id + "_vtable " + v.id + "_vtable_ = ");
     this.sayln("{");
+    
+    
+    //TODO 打印class_gc_map 
+    // 通过classLocal表
+    LinkedList<Tuple> locals=this.classLocal.get(v.id);
+    this.printSpaces();
+    this.say("\"");
+    for(Tuple t:locals)
+    {
+    	if(t.type instanceof Type.ClassType||t.type instanceof Type.IntArray)
+    	{
+    		this.say("1");
+    	}
+    	else
+    		this.say("0");
+    }
+    this.sayln("\",");
+    
+    
     for (codegen.C.Ftuple t : v.ms) {
       this.say("  ");
       this.sayln(t.classs + "_" + t.id + ",");
@@ -497,7 +552,7 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("};\n");
     return;
   }
-  //TODO outputGCstack
+  // outputGCstack
   private void outputGCstack(codegen.C.Ast.MainMethod.MainMethodSingle mainMethod)
   {
 	  	this.sayln("struct Tiger_main_gc_frame");
@@ -560,11 +615,47 @@ public class PrettyPrintVisitor implements Visitor
 		this.unIndent();
 		this.sayln("};\n");
   }
+  // outputGcmap
+  private void outputGCmap(MainMethodSingle m)
+  {
+	  this.sayln("int Tiger_main_locals_gc_map = 1;");
+	  this.sayln("");
+  }
+  private void outputGCmap(MethodSingle m)
+  {
+	  int i=0;
+	  this.say("char* "+m.classId+"_"+m.id+"_arguments_gc_map=");
+	  this.say("\"");
+	  for(codegen.C.Ast.Dec.T d:m.formals)
+	  {
+		  DecSingle dd=(DecSingle)d;
+		  if(dd.type instanceof Type.ClassType||dd.type instanceof Type.IntArray)
+		  {
+			  this.say("1");
+		  }
+		  else
+			  this.say("0");
+	  }
+	  this.sayln("\";");
+	  // locals_gc_map
+	  for(codegen.C.Ast.Dec.T d:m.locals)
+	  {
+		  DecSingle dd=(DecSingle)d;
+		  if(dd.type instanceof Type.ClassType
+				  ||dd.type instanceof Type.IntArray)
+		  {
+			  i++;
+		  }
+	  }
+	  this.sayln("int "+m.classId+"_"+m.id+"_locals_gc_map="+i+";" );
+	  this.sayln("");
+  }
 
   // class
   @Override
   public void visit(ClassSingle c)
   {
+	  LinkedList<Tuple> locals=new LinkedList<Tuple>();
     this.sayln("struct " + c.id);
     this.sayln("{");
     this.sayln("  struct " + c.id + "_vtable *vptr;");
@@ -573,7 +664,10 @@ public class PrettyPrintVisitor implements Visitor
       t.type.accept(this);
       this.say(" ");
       this.sayln(t.id + ";");
+      //TODO locals
+      locals.add(t);
     }
+    this.classLocal.put(c.id, locals);//进入map
     this.sayln("};");
     return;
   }
@@ -605,13 +699,14 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln("extern void *previous=0;");
   
 
-    //TODO
+    //
     this.sayln("// structures");
     for (codegen.C.Ast.Class.T c : p.classes) {//处理类的声明
+    	//在这生成类的局部变量表
       c.accept(this);
     }
 
-    //TODO
+    //
     this.sayln("// vtables structures");
     for (Vtable.T v : p.vtables) {//虚函数表，里面放有函数指针.注意！！！函数指针需要带参数。
       v.accept(this);				//这里为了可以打印函数指针的参数，对classTable的初始化
@@ -637,28 +732,35 @@ public class PrettyPrintVisitor implements Visitor
         this.sayln(");");
     }
     
-    //TODO
+    //
     this.sayln("// vtables");//虛函数表初始化-----在初始化之前必须先声明方法
     for (Vtable.T v : p.vtables) {
       outputVtable((VtableSingle) v);
     }
     this.sayln("");
     
-    //TODO GC stack frames
+    // GC stack frames
     this.sayln("//GC stack frames");
     //先打印main
     outputGCstack((codegen.C.Ast.MainMethod.MainMethodSingle)p.mainMethod);
+    
     for(codegen.C.Ast.Method.T m:p.methods)
     {
     	outputGcstack((MethodSingle)m);
     }
     
     
-    //TODO // memory GC maps
+     // memory GC maps
     this.sayln("// memory GC maps");
+    
+    outputGCmap((codegen.C.Ast.MainMethod.MainMethodSingle)p.mainMethod);
+    for(codegen.C.Ast.Method.T m:p.methods)
+    {
+    	outputGCmap((codegen.C.Ast.Method.MethodSingle)m);
+    }
 
     
-    //TODO
+    //
     this.sayln("// methods");
     for (Method.T m : p.methods) {//方法的定义------在方法定义以前，就应该初始化虚函数表
     							//但是，虚函数表的初始化又需要方法名，所以在方法定义之前，
@@ -666,12 +768,8 @@ public class PrettyPrintVisitor implements Visitor
       m.accept(this);
     }
     this.sayln("");
-    
 
-   
     
-    
-
     this.sayln("// main method");//处理main函数
     p.mainMethod.accept(this);
     this.sayln("");
