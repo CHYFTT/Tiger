@@ -1,3 +1,20 @@
+/*------------------------------------------------------------------*/
+/* Copyright (C) SSE-USTC, 2014-2015                                */
+/*                                                                  */
+/*  FILE NAME             :  gc.c                                   */
+/*  PRINCIPAL AUTHOR      :  qcLiu                                  */
+/*  LANGUAGE              :  Java                                   */
+/*  TARGET ENVIRONMENT    :  ANY                                    */
+/*  DATE OF FIRST RELEASE :  2014/10/05                             */
+/*  DESCRIPTION           :  the tiger compiler 'gc                 */
+/*------------------------------------------------------------------*/
+
+/*
+ * Revision log:
+ *
+ *
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
