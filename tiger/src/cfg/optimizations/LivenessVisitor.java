@@ -1,3 +1,20 @@
+/*------------------------------------------------------------------*/
+/* Copyright (C) SSE-USTC, 2014-2015                                */
+/*                                                                  */
+/*  FILE NAME             :  LiveNessVisitor.java                   */
+/*  PRINCIPAL AUTHOR      :  qcLiu                                  */
+/*  LANGUAGE              :  Java                                   */
+/*  TARGET ENVIRONMENT    :  ANY                                    */
+/*  DATE OF FIRST RELEASE :  2014/10/05                             */
+/*  DESCRIPTION           :  the tiger compiler                     */
+/*------------------------------------------------------------------*/
+
+/*
+ * Revision log:
+ *
+ * 
+ *
+ */
 package cfg.optimizations;
 
 import java.util.ArrayList;
@@ -738,7 +755,7 @@ public class LivenessVisitor implements cfg.Visitor
   //环测试  ：会输出一个节点上最大的环
    System.out.println("test cycle");
 
-    Set enn=cycle.entrySet();
+    Set enn=cycle.entrySet();//Set是一个接口，由cycle实例化。
     Iterator itt=enn.iterator();
     while(itt.hasNext())
     {
