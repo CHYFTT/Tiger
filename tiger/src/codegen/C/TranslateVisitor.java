@@ -1,14 +1,28 @@
+/*------------------------------------------------------------------*/
+/* Copyright (C) SSE-USTC, 2014-2015                                */
+/*                                                                  */
+/*  FILE NAME             :  TranslateVisitor.java                  */
+/*  PRINCIPAL AUTHOR      :  qcLiu                                  */
+/*  LANGUAGE              :  Java                                   */
+/*  TARGET ENVIRONMENT    :  ANY                                    */
+/*  DATE OF FIRST RELEASE :  2014/10/05                             */
+/*  DESCRIPTION           :  the tiger compiler                     */
+/*------------------------------------------------------------------*/
+
+/*
+ * Revision log:
+ *
+ * 
+ *
+ */
 package codegen.C;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 
-import ast.Ast.Type.T;
 import codegen.C.Ast.Class;
 import codegen.C.Ast.Class.ClassSingle;
 import codegen.C.Ast.Dec;
 import codegen.C.Ast.Exp;
-import codegen.C.Ast.Exp.Call;
 import codegen.C.Ast.Exp.Id;
 import codegen.C.Ast.Exp.Lt;
 import codegen.C.Ast.Exp.NewObject;
@@ -48,9 +62,13 @@ public class TranslateVisitor implements ast.Visitor
   									//如果调用了方法，就要把对应的类先声明
   
   
-  private LinkedList<Class.T> classes;//
+  private LinkedList<Class.T> classes;//只存放类的信息。
   private LinkedList<Vtable.T> vtables;//虚函数表，存放所有的方法
-  private LinkedList<Method.T> methods;//
+  private LinkedList<Method.T> methods;
+  /*
+   * 在C的Ast中，method不在class里面，用虚方法表来表示哪个方法属于那个类
+   * 方法表只存放方法体。虛方法表存放类和类的方法的信息
+   */
   private MainMethod.T mainMethod;//main对象
   
   
@@ -128,7 +146,10 @@ public class TranslateVisitor implements ast.Visitor
       x.accept(this);
       args.add(this.exp);
     }
-    this.exp = new Call(newid, exp, e.id, args);
+    e.rt.accept(this);
+    
+  //  this.exp = new Call(newid, exp, e.id, args,e.rt);
+    this.exp = new codegen.C.Ast.Exp.Call(newid, exp, e.id, args,this.type);
     return;
   }
 
@@ -379,13 +400,14 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.Ast.Class.ClassSingle c)
   {
     ClassBinding cb = this.table.get(c.id);//根据class表查询classbinding对象
-    //得到对应classTable里面classbinding对象的LinkedList<Tuple> fields
+    //向class表中加入类的信息
     this.classes.add(new ClassSingle(c.id, cb.fields));
-    //得到ArrayList<Ftuple> methods
+    //向虚方法表中加入类名及对应的方法信息
     this.vtables.add(new VtableSingle(c.id, cb.methods));
     this.classId = c.id;
     for (ast.Ast.Method.T m : c.methods) {
       m.accept(this);
+      //将类的方法放入方法表
       this.methods.add(this.method);
     }
     return;
@@ -446,10 +468,14 @@ public class TranslateVisitor implements ast.Visitor
         ast.Ast.Method.MethodSingle m = (ast.Ast.Method.MethodSingle) mthd;
         LinkedList<Dec.T> newArgs = new LinkedList<Dec.T>();//声明一个新的参数列表
         
-        newArgs.add(new Dec.DecSingle(
-                new ClassType(cc.id), "this"));//重点！！也是放了一个自己所在类的类型
-        									//这样classTable中对应ClassBinding对象的
-        for (ast.Ast.Dec.T arg : m.formals) {//Ftuple的参数列表也会多一项
+        newArgs.add(new Dec.DecSingle(//第一个参数是this
+                new ClassType(cc.id), "this"));
+        /*
+         * 重点！！也是放了一个自己所在类的类型,这样classTable中对应ClassBinding对象的
+         * Ftuple的参数列表也会多一项。且在第一个位置
+         */
+        //后面的参数
+        for (ast.Ast.Dec.T arg : m.formals) {
           arg.accept(this);
           newArgs.add(this.dec);//同上
         }

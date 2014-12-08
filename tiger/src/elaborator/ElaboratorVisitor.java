@@ -1,3 +1,20 @@
+/*------------------------------------------------------------------*/
+/* Copyright (C) SSE-USTC, 2014-2015                                */
+/*                                                                  */
+/*  FILE NAME             :  ElaboratorVisitor.java                 */
+/*  PRINCIPAL AUTHOR      :  qcLiu                                  */
+/*  LANGUAGE              :  Java                                   */
+/*  TARGET ENVIRONMENT    :  ANY                                    */
+/*  DATE OF FIRST RELEASE :  2014/10/05                             */
+/*  DESCRIPTION           :  the tiger compiler                     */
+/*------------------------------------------------------------------*/
+
+/*
+ * Revision log:
+ *
+ * 
+ *
+ */
 package elaborator;
 
 import java.util.LinkedList;
@@ -43,7 +60,7 @@ public class ElaboratorVisitor implements ast.Visitor
   public ClassTable classTable; // symbol table for class
   public MethodTable methodTable; // symbol table for each method
   public String currentClass; // the class name being elaborated
-  public Type.T type; // type of the expression being elaborated
+  public  Type.T type; // type of the expression being elaborated
   public String currentMethod;
   public int linenum;
   public ElaboratorVisitor()
@@ -111,6 +128,8 @@ private void error()
 	  e.right.accept(this);
 	  if(!t.toString().equals(this.type.toString()))
 		  error(Error.MISTYPE,e.linenum);
+	  if(!t.toString().equals("@boolean"))
+		  error(Error.MISTYPE,e.linenum);//&&两边必须为&&
 	  return;
   }
 
@@ -122,6 +141,13 @@ private void error()
 	  if(!this.type.toString().equals("@int"))
 		  error(Error.MISTYPE,e.linenum);
 	  e.array.accept(this);
+	  
+	  //特殊处理ArraySelect
+	  /*
+	   * i[3]+3 上面的e.array.accept之后this.type=IntArray，所以要特殊处理
+	   * 让所有ArraySelect都为Int类型。
+	   */
+	  this.type=new ast.Ast.Type.Int();
 	  //System.out.println(this.type.toString());
 	  
 	  return;
@@ -343,17 +369,8 @@ private void error()
     s.type=type;//为了适应bytecode的需要！！！！！在此时需要给Assign的type赋值！！！！
     s.exp.accept(this);//type是存放=左边的id的类型，this.type是存放=右边exp的类型，
     					//因此，执行完s.exp.accept(this)后，this.type一定要改变。
-    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
-    {
-    	//type代表左边，this.type代表右边
-    	if(!this.type.toString().equals(type.toString()))
-    		error(Error.MISTYPE,s.linenum);
-    }
-    else//如果=右边是ArraySelect类型，那左边只能是int型。
-    {
-    	if(!type.toString().equals("@int"))
-    		error(Error.MISTYPE,s.linenum);
-    }
+    
+    
     return;
   }
 
@@ -417,16 +434,10 @@ private void error()
   public void visit(Print s)
   {
     s.exp.accept(this);
-    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
-    {
-    	if (!this.type.toString().equals("@int"))
-    		error(Error.MISTYPE,s.linenum);
-    }
-    else
-    {
-    	if (!this.type.toString().equals("@int[]"))
-    		error(Error.MISTYPE,s.linenum);
-    }
+    
+    if (!this.type.toString().equals("@int"))
+    	error(Error.MISTYPE,s.linenum);
+    
     return;
   }
 
@@ -501,6 +512,9 @@ private void error()
      if(!methodtype.retType.toString().equals(this.type.toString()))//Why??
     	 //methodtype.retType==this.type
      {
+    	 //test
+    	 System.out.println(methodtype.retType.toString());
+    	 System.out.println(this.type.toString());
     	 
     	 error(Error.RET,linenum);
      }
