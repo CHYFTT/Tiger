@@ -434,16 +434,10 @@ private void error()
   public void visit(Print s)
   {
     s.exp.accept(this);
-    if(!s.exp.getClass().getName().equals("ast.Ast$Exp$ArraySelect"))
-    {
-    	if (!this.type.toString().equals("@int"))
-    		error(Error.MISTYPE,s.linenum);
-    }
-    else
-    {
-    	if (!this.type.toString().equals("@int[]"))
-    		error(Error.MISTYPE,s.linenum);
-    }
+    
+    if (!this.type.toString().equals("@int"))
+    	error(Error.MISTYPE,s.linenum);
+    
     return;
   }
 

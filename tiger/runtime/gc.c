@@ -69,7 +69,7 @@ void Tiger_heap_init (int heapSize)
     heap.fromFree=heap.from;
   // #5: initialize the "to" field (with what value?)
     heap.to=heap.fromFree+heap.size;
-  // #6: initizlize the "toStart" field with NULL;
+  // #6: initialize the "toStart" field with NULL;
     heap.toNext=(char*)heap.to+1;
   // #7: initialize the "toNext" field with NULL;
     heap.toStart=(char*)heap.to+1;
@@ -292,7 +292,7 @@ int calculateSize(void* temp)
     int size=0;
     int* objAdd=*(int*)temp;
     printf("\ncalculateSize -----------------------\n");
-    printf("\nobjorarray add is:0x%d\n",(char*)objAdd+4);
+    printf("\n objorarray add is:0x%d\n",(char*)objAdd+4);
     int isArray=*((char*)objAdd+4);
     printf("isAarray is:%d\n",isArray);
 
@@ -381,7 +381,7 @@ void* Copy(void *temp)
             newAdd=heap.toNext;
             *(int*)forwarding=(int*)newAdd;
             printf("heap.toNext=0x%d\n",(int*)heap.toNext);
-            printf("objAdd+12 = 0x%d\n",*(int**)((char *)objAdd + 12));
+            printf("objAdd+12 = 0x%d\n",*(int*)((char *)objAdd + 12));
             printf("new forwarding is :0x%d\n",*(int*)forwarding);
 
             printf("Copy!!!!\n");
@@ -426,7 +426,7 @@ void* Copy(void *temp)
 
 void RewriteObj()
 {
-      char* toStart_temp=heap.toStart;
+  char* toStart_temp=heap.toStart;
   while(toStart_temp<heap.toNext)
   {
       int* obj=(int*)heap.toStart;
@@ -493,11 +493,14 @@ void RewriteObj()
   while(previous!=0)
   {
       printf("\n-------------------this is a frame----------------------\n");
-    char* arguments_gc_map = (*((char **)((char *)previous + 4)));
-    //告诉编译器，这是一个指向指针的指针(char**)。
-    //再用*修饰后，变为一个指针*(char**)。
-    int* arguments_address=((int**)((char*)previous+8));
-    int locals_gc_map=*(((char*)previous+12));
+    char* arguments_gc_map = *((int*)((char *)previous + 4));
+    /*
+     * 此处的指针使用
+     * (int*)修饰是因为要对这个指针进行取地址操作。具体如何操作就是由(int*)说明。
+     * 此处的意思是取地址操作以4byte进行。所以，这个位置替换成(long*),(int**),(char**)都不影响结果。
+     */
+    int* arguments_address=(int*)((char*)previous+8);
+    int locals_gc_map=*((char*)previous+12);
 
     printf("arguments_gc_map is:\"%s\"\n",arguments_gc_map);
     printf("arguments_gc_map address is:0x%d\n",*arguments_address);
@@ -509,20 +512,20 @@ void RewriteObj()
     //arguments
     if(arguments_gc_map!=0)
     {
-        printf("\nthis is a argument_gc_map---------\n");
+        printf("\n this is a argument_gc_map---------\n");
         int* addr=arguments_address;
         int len=strlen(arguments_gc_map);
         int i=0;
 
-        printf("arguments_gc_map lenght is %d\n",len);
+        printf("arguments_gc_map length is %d\n",len);
 
         for(i=0;i<len;i++)
         {
 
             if(arguments_gc_map[i]=='1')
             {//字符用''
-                temp=*((int**)addr);
-                printf("\nin arguments obj address is:0x%d\n",*(int**)temp);
+                temp=*((int*)addr);
+                printf("\nin arguments obj address is:0x%d\n",*(int*)temp);
 
                 //Copy
                 temp=Copy(temp);
@@ -541,7 +544,7 @@ void RewriteObj()
      //locals
      if(locals_gc_map!=0)
      {
-        printf("\nthis is a locals_gc_map----------------------\n");
+        printf("\n this is a locals_gc_map----------------------\n");
         int j=0;
         int* localStart=(int*)((char*)previous+16);
         int* localTemp=localStart;
@@ -560,7 +563,10 @@ void RewriteObj()
         }
      }
 
-       previous = (char *)(*((char **)previous));
+       previous = (*(int*)previous);
+      /*
+       *此处指针的用法(同上)!!!(*(long*)previous)也是可以的。
+       */
        printf("-------------------------frame finished-----------------------\n");
   }
   //previous遍历结束

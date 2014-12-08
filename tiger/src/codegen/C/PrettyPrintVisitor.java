@@ -66,6 +66,13 @@ public class PrettyPrintVisitor implements Visitor
   private HashSet<String> redec=new HashSet<String>();
   private HashMap<String,LinkedList<Tuple>> classLocal=
 		  new HashMap<String,LinkedList<Tuple>>();
+  /*
+   * 这个HashSet<String> redec每一个方法clear()一次。
+   * 里面记录的id是Array或ClassType，也就是frame里面声明过的id。
+   * 
+   * HashMap<String,LinkedList<Tuple>> classLocal的作用是记录每个类的id与
+   * 这个类里面出现的声明。用于构造class_gc_map。
+   */
 
   public PrettyPrintVisitor()
   {
@@ -442,6 +449,12 @@ public class PrettyPrintVisitor implements Visitor
 		}
 		else
 		{
+			/*
+			 * 在打印local声明的时候，如果是Array或者是ClassType
+			 * 就用frame.
+			 * 这里用HashSet记录这个声明的原因是，在之后的Stm里面，出现的id都要改变。
+			 * 需要通过这个HashSet判断是否是一个frame里面的id
+			 */
 			this.redec.add(dec.id);
 			this.say("  frame."+dec.id+"=0;\n");
 		}
@@ -552,7 +565,7 @@ public class PrettyPrintVisitor implements Visitor
     
     
     //TODO 打印class_gc_map 
-    // 通过classLocal表
+    // 通过类的id，查找到这个类里面出现的所有声明
     LinkedList<Tuple> locals=this.classLocal.get(v.id);
     this.printSpaces();
     this.say("\"");
@@ -678,7 +691,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ClassSingle c)
   {
-	  LinkedList<Tuple> locals=new LinkedList<Tuple>();
+	  
+	  LinkedList<Tuple> locals=new LinkedList<Tuple>();//记录类里面的声明。
     this.sayln("struct " + c.id);
     this.sayln("{");
     this.sayln("  struct " + c.id + "_vtable *vptr;");
