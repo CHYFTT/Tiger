@@ -16,12 +16,18 @@
  * 1>add Exchange()
  * 2>add RewriteObj()
  * --------------------
+ *
+ * 2014/12/08
+ * 1>add the copyCount
+ *
+ *
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 void Tiger_gc ();
+int copyCount=0;//用于记录copy了几个对象
 
 // The Gimple Garbage Collector.
 
@@ -58,7 +64,7 @@ void Tiger_heap_init (int heapSize)
 {
   // You should write 7 statement here:
   // #1: allocate a chunk of memory of size "heapSize" using "malloc"
-  struct JavaHeap* jheap=(struct JavaHeap*)malloc(heapSize);
+    struct JavaHeap* jheap=(struct JavaHeap*)malloc(heapSize);
 
   // #2: initialize the "size" field, note that "size" field
   // is for semi-heap, but "heapSize" is for the whole heap.
@@ -69,7 +75,7 @@ void Tiger_heap_init (int heapSize)
     heap.fromFree=heap.from;
   // #5: initialize the "to" field (with what value?)
     heap.to=heap.fromFree+heap.size;
-  // #6: initialize the "toStart" field with NULL;
+  // #6: initizlize the "toStart" field with NULL;
     heap.toNext=(char*)heap.to+1;
   // #7: initialize the "toNext" field with NULL;
     heap.toStart=(char*)heap.to+1;
@@ -78,7 +84,7 @@ void Tiger_heap_init (int heapSize)
 
     printf("Java Initial finished...\n");
     printf("Heap size:%d\n",heap.size);
-    printf("Heap from:0x%d\n",heap.from);
+    printf("Heap from:0x%d\n",(int)heap.from);
     printf("Heap to:0x%d\n",heap.to);
     printf("Heap toStart:0x%d\n",heap.toStart);
     printf("Heap toNext:0x%d\n",heap.toNext);
@@ -88,6 +94,7 @@ void Tiger_heap_init (int heapSize)
 // The "prev" pointer, pointing to the top frame on the GC stack.
 // (see part A of Lab 4)
 void *previous = 0;//Sum。java.c extern void* previous;
+
 
 
 
@@ -307,10 +314,10 @@ int calculateSize(void* temp)
     {
         //Obj
         int len=0;
-        int* vtable=*(int*)temp;
+        int* vtable=*(int*)objAdd;
         char* classMap=*vtable;
 
-        printf("----------------%d\n",classMap);
+        printf("----------------%s\n",classMap);
 
         len=strlen(classMap);
 
@@ -369,6 +376,8 @@ void* Copy(void *temp)
                 ||*((int*)forwarding)==0)
         {//forwarding在from区间里面或者forwarding为0
 
+            //在这里才是真正的copy！！！
+            copyCount++;
             printf("forwarding is in from or forwarding is 0\n");
             printf("forwarding is :%d\n",*(int*)forwarding);
             //因为没有给forwarding赋值，所以先用char*好输出0，不然是一大长串数。
@@ -426,8 +435,8 @@ void* Copy(void *temp)
 
 void RewriteObj()
 {
-  char* toStart_temp=heap.toStart;
-  while(toStart_temp<heap.toNext)
+      char* toStart_temp=heap.toStart;
+  while(copyCount>0)
   {
       int* obj=(int*)heap.toStart;
       //判断对象是什么类型。
@@ -439,6 +448,7 @@ void RewriteObj()
       {
         printf("in toSpace is an Array\n");
         toStart_temp=(char*)toStart_temp+size;
+        copyCount--;
       }
       else
       {
@@ -464,6 +474,7 @@ void RewriteObj()
 
 
          toStart_temp=(char*)toStart_temp+size;
+         copyCount--;
 
 
       }
