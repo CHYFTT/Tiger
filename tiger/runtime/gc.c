@@ -235,7 +235,7 @@ void *Tiger_new_array (int length)
 	    	{
 	    	    printf("Tiger_gc can not collecte enough space...\n");
 	    	    printf("There is %d byte remained,but you need:%d\n",
-             (int*)(heap.to+heap.size-heap.toNext),length*(sizeof(int))+16);
+             (int*)(heap.to-heap.fromFree),length*(sizeof(int))+16);
 	    	    exit(1);
 	    	}
 
